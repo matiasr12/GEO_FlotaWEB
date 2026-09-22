@@ -14,6 +14,8 @@ export default async function MapPage() {
     await registrarAuditoria({ user, action: "ver_mapa" });
   }
 
+  const conUbicacion = devices.filter((d) => d.ubicacion).length;
+
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
       <div>
@@ -22,8 +24,14 @@ export default async function MapPage() {
           Última posición estimada de cada equipo dentro del área de la faena.
         </p>
       </div>
-      <div className="flex-1">
+      <div className="relative flex-1">
         <MapViewClient devices={devices} center={CENTRO_FAENA} zoom={13} altura="100%" />
+        {conUbicacion === 0 && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-surface/90 px-3 py-1.5 text-xs text-muted shadow">
+            La API todavía no entrega coordenadas por equipo — el mapa queda
+            vacío hasta que el backend las resuelva.
+          </div>
+        )}
       </div>
     </div>
   );

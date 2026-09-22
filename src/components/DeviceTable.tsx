@@ -52,7 +52,7 @@ export function DeviceTable({
               <td className="px-5 py-3 text-muted">
                 {d.ubicacion
                   ? `${d.ubicacion.lat.toFixed(4)}, ${d.ubicacion.lng.toFixed(4)}`
-                  : "—"}
+                  : (d.areaDetectada ?? d.area ?? "—")}
               </td>
               <td className="px-5 py-3">
                 <StatusBadge estado={d.estado} />

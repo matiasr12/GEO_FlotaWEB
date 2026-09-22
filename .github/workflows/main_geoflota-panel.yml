@@ -33,11 +33,21 @@ jobs:
           cp -r public .next/standalone/public
           cp -r .next/static .next/standalone/.next/static
 
+      - name: Diagnostico -- confirmar que el build quedo completo antes de subir
+        run: |
+          echo "--- .next/standalone ---"
+          ls -la .next/standalone
+          echo "--- .next/standalone/.next ---"
+          ls -la .next/standalone/.next
+          echo "--- BUILD_ID ---"
+          cat .next/standalone/.next/BUILD_ID || echo "BUILD_ID NO EXISTE"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: .next/standalone
+          include-hidden-files: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,7 +61,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
+      - name: Diagnostico -- confirmar que .next llego completo
+        run: |
+          ls -la .next || echo ".next NO EXISTE tras el download"
+          cat .next/BUILD_ID || echo "BUILD_ID NO EXISTE tras el download"
+
       - name: Login to Azure
         uses: azure/login@v2
         with:

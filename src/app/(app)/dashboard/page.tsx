@@ -6,9 +6,6 @@ import { SemaforoCard } from "@/components/SemaforoCard";
 import { StatsPanel } from "@/components/StatsPanel";
 import { DeviceTable } from "@/components/DeviceTable";
 
-// Planta industrial de Minera Caserones, Región de Atacama.
-const CENTRO_FAENA: [number, number] = [-28.169, -69.5336];
-
 export default async function DashboardPage() {
   const user = await obtenerSesion();
   const devices = await listarEquipos();
@@ -29,7 +26,7 @@ export default async function DashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <div className="relative h-[420px]">
-          <MapViewClient devices={devices} center={CENTRO_FAENA} altura="100%" />
+          <MapViewClient devices={devices} altura="100%" />
           {conUbicacion === 0 && (
             <div className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit rounded-lg bg-surface/90 px-3 py-1.5 text-xs text-muted shadow">
               La API todavía no entrega coordenadas por equipo — el mapa

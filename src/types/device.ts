@@ -4,6 +4,7 @@ export interface DevicePosition {
   lat: number;
   lng: number;
   capturedAt: string; // ISO timestamp de cuando el daemon tomó la lectura
+  precisionMetros?: number | null;
 }
 
 export interface Device {
@@ -42,6 +43,9 @@ export interface EquipoApiDTO {
   receivedAt: string;
   areaDetectada: string | null;
   alerta: boolean;
+  latitud: number | null;
+  longitud: number | null;
+  precisionMetros: number | null;
 }
 
 export interface DeviceInput {

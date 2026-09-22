@@ -16,7 +16,7 @@ const MapView = dynamic(() => import("./MapView").then((m) => m.MapView), {
 
 export function MapViewClient(props: {
   devices: Device[];
-  center: [number, number];
+  center?: [number, number];
   zoom?: number;
   altura?: string;
 }) {

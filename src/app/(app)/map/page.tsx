@@ -3,9 +3,6 @@ import { listarEquipos } from "@/lib/daemon-api";
 import { registrarAuditoria } from "@/lib/audit";
 import { MapViewClient } from "@/components/MapViewClient";
 
-// Planta industrial de Minera Caserones, Región de Atacama.
-const CENTRO_FAENA: [number, number] = [-28.169, -69.5336];
-
 export default async function MapPage() {
   const user = await obtenerSesion();
   const devices = await listarEquipos();
@@ -25,7 +22,7 @@ export default async function MapPage() {
         </p>
       </div>
       <div className="relative flex-1">
-        <MapViewClient devices={devices} center={CENTRO_FAENA} zoom={13} altura="100%" />
+        <MapViewClient devices={devices} zoom={13} altura="100%" />
         {conUbicacion === 0 && (
           <div className="pointer-events-none absolute inset-x-0 bottom-4 mx-auto w-fit rounded-lg bg-surface/90 px-3 py-1.5 text-xs text-muted shadow">
             La API todavía no entrega coordenadas por equipo — el mapa queda

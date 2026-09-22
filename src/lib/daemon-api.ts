@@ -16,29 +16,42 @@ import { getMockDevices } from "@/lib/mock-data";
 
 const SIN_SENAL_MINUTOS = 30;
 
-// GET /api/equipos no entrega latitud/longitud por equipo (solo `area` y
-// `areaDetectada`, nombres, no coordenadas). Hasta que el backend resuelva
-// coordenadas por equipo (por ejemplo cruzando areaDetectada con
-// BssidsArea.Latitud/Longitud), el mapa no puede ubicar marcadores reales
-// — se deja `ubicacion: null` a propósito, no es un bug.
+// GET /api/equipos ahora resuelve latitud/longitud cruzando el BSSID
+// visto por el equipo contra BssidsArea (mismo backend, misma fila que
+// ya usaba para areaDetectada). Si el equipo no tiene ningún BSSID
+// conocido, el backend manda null y acá se deja sin ubicación en vez de
+// inventar coordenadas.
 function mapEquipoToDevice(e: EquipoApiDTO): Device {
   const nombre = [e.personalNombre, e.personalApellido].filter(Boolean).join(" ").trim();
-  const minutosDesdeUltimaLectura =
-    (Date.now() - new Date(e.receivedAt).getTime()) / 60_000;
+  const ultimaLectura = e.receivedAt ? new Date(e.receivedAt).getTime() : NaN;
+  const minutosDesdeUltimaLectura = (Date.now() - ultimaLectura) / 60_000;
 
+  // Sin receivedAt (nunca reportó) o con una fecha inválida cuenta como
+  // sin señal, no como "normal" (Number.isNaN(minutos) antes se colaba
+  // como false en la comparación y lo dejaba pasar por normal/alerta).
   const estado =
-    minutosDesdeUltimaLectura > SIN_SENAL_MINUTOS
+    Number.isNaN(minutosDesdeUltimaLectura) || minutosDesdeUltimaLectura > SIN_SENAL_MINUTOS
       ? "sin_senal"
       : e.alerta
         ? "alerta"
         : "normal";
+
+  const ubicacion =
+    e.latitud != null && e.longitud != null
+      ? {
+          lat: e.latitud,
+          lng: e.longitud,
+          capturedAt: e.receivedAt ?? e.recordTimestamp,
+          precisionMetros: e.precisionMetros,
+        }
+      : null;
 
   return {
     id: String(e.equipoId),
     hostname: e.computerName || e.codigoActivo,
     custodioNombre: nombre || "Sin asignar",
     custodioId: e.rut ?? String(e.equipoId),
-    ubicacion: null,
+    ubicacion,
     estado,
     dentroDeArea: !e.alerta,
     faena: e.faena,

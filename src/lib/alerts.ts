@@ -1,19 +1,31 @@
 import "server-only";
-import { getMockAlerts } from "@/lib/mock-data";
+import { listarEquipos } from "@/lib/daemon-api";
 import type { Alert } from "@/types/alert";
 
-// TODO: cuando el backend exponga un endpoint real de alertas (equipos
-// fuera del área autorizada), reemplazar por una llamada a daemon-api.ts
-// igual que listarEquipos(). Por ahora las alertas se derivan del set de
-// equipos simulado y el "reconocimiento" vive en memoria del proceso.
+// Las alertas se derivan de los equipos reales (GET /api/equipos ya trae
+// el booleano `alerta` calculado por el backend) — no hay un endpoint de
+// alertas separado. El "reconocimiento" vive solo en memoria del proceso;
+// no persiste entre reinicios del servidor (ver README, pendiente moverlo
+// a una tabla real si hace falta conservarlo).
 
 const reconocidas = new Set<string>();
 
 export async function listarAlertas(): Promise<Alert[]> {
-  return getMockAlerts().map((a) => ({
-    ...a,
-    reconocida: reconocidas.has(a.id),
-  }));
+  const equipos = await listarEquipos();
+
+  return equipos
+    .filter((d) => d.estado === "alerta")
+    .map((d) => ({
+      id: `alert-${d.id}`,
+      deviceId: d.id,
+      hostname: d.hostname,
+      custodioNombre: d.custodioNombre,
+      ultimaUbicacion: d.ubicacion,
+      area: d.area,
+      areaDetectada: d.areaDetectada,
+      detectadaEn: d.ultimaTelemetria ?? new Date().toISOString(),
+      reconocida: reconocidas.has(`alert-${d.id}`),
+    }));
 }
 
 export async function reconocerAlerta(id: string): Promise<void> {

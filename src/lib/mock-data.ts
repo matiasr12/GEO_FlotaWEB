@@ -1,5 +1,4 @@
 import type { Device } from "@/types/device";
-import type { Alert } from "@/types/alert";
 
 // Dataset simulado, usado solo mientras el backend real está caído/incompleto.
 //
@@ -115,23 +114,4 @@ export function crearMockDevice(input: {
   };
   devices.unshift(nuevo);
   return nuevo;
-}
-
-export function getMockAlerts(): Alert[] {
-  const devices = getMockDevices();
-  return devices
-    .filter((d) => d.estado === "alerta" && d.ubicacion)
-    .map((d) => ({
-      id: `alert-${d.id}`,
-      deviceId: d.id,
-      hostname: d.hostname,
-      custodioNombre: d.custodioNombre,
-      ultimaUbicacion: {
-        lat: d.ubicacion!.lat,
-        lng: d.ubicacion!.lng,
-        capturedAt: d.ubicacion!.capturedAt,
-      },
-      detectadaEn: d.ubicacion!.capturedAt,
-      reconocida: false,
-    }));
 }

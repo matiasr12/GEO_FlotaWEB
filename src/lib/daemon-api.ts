@@ -7,9 +7,11 @@ import { getMockDevices } from "@/lib/mock-data";
  * Cliente server-side hacia la API del backend (Azure). El token
  * compartido del daemon vive solo acá: nunca debe llegar al navegador.
  *
- * Si USE_MOCK_DATA=true, o si la llamada real falla (backend caído,
- * token inválido, etc.), se cae a un dataset simulado para que el panel
- * siga siendo utilizable/demostrable.
+ * Los datos simulados SOLO se usan cuando USE_MOCK_DATA=true a propósito
+ * (desarrollo local sin backend a mano). Si la llamada real falla, el
+ * panel muestra "0 equipos" en vez de disfrazar el error con data falsa
+ * — así un problema de conexión/autenticación con el backend real nunca
+ * se confunde con equipos de verdad.
  */
 
 const SIN_SENAL_MINUTOS = 30;
@@ -80,10 +82,7 @@ export async function listarEquipos(): Promise<Device[]> {
     );
     return equipos.map(mapEquipoToDevice);
   } catch (err) {
-    console.error(
-      "[daemon-api] fallo la llamada real, usando datos simulados:",
-      err
-    );
-    return getMockDevices();
+    console.error("[daemon-api] fallo la llamada a /api/equipos:", err);
+    return [];
   }
 }

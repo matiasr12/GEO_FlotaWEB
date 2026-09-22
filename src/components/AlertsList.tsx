@@ -41,11 +41,13 @@ export function AlertsList({
             <div className="mt-1 flex flex-wrap items-center gap-4 text-xs text-muted">
               <span className="flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                {a.ultimaUbicacion.lat.toFixed(4)}, {a.ultimaUbicacion.lng.toFixed(4)}
+                {a.ultimaUbicacion
+                  ? `${a.ultimaUbicacion.lat.toFixed(4)}, ${a.ultimaUbicacion.lng.toFixed(4)}`
+                  : (a.areaDetectada ?? a.area ?? "Área desconocida")}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                {new Date(a.ultimaUbicacion.capturedAt).toLocaleString("es-CL")}
+                {new Date(a.detectadaEn).toLocaleString("es-CL")}
               </span>
             </div>
           </div>

@@ -42,12 +42,19 @@ jobs:
           echo "--- BUILD_ID ---"
           cat .next/standalone/.next/BUILD_ID || echo "BUILD_ID NO EXISTE"
 
+      - name: Armar el zip a mano (para no depender de que otra Action decida que incluir)
+        run: |
+          cd .next/standalone
+          zip -r ../../deploy.zip . -x ".git/*"
+          cd ../..
+          echo "--- contenido del zip ---"
+          unzip -l deploy.zip | grep -E "server.js|BUILD_ID"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .next/standalone
-          include-hidden-files: true
+          path: deploy.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,10 +69,10 @@ jobs:
         with:
           name: node-app
 
-      - name: Diagnostico -- confirmar que .next llego completo
+      - name: Diagnostico -- confirmar que el zip llego completo
         run: |
-          ls -la .next || echo ".next NO EXISTE tras el download"
-          cat .next/BUILD_ID || echo "BUILD_ID NO EXISTE tras el download"
+          ls -la deploy.zip
+          unzip -l deploy.zip | grep -E "server.js|BUILD_ID"
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -80,5 +87,5 @@ jobs:
         with:
           app-name: 'geoflota-panel'
           slot-name: 'Production'
-          package: .
+          package: deploy.zip
           

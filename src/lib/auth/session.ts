@@ -1,14 +1,18 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { env } from "@/lib/env";
+import { getEnv } from "@/lib/env";
 import type { SessionUser } from "@/types/user";
 
 const COOKIE_NAME = "geoflota_session";
-const secret = new TextEncoder().encode(env.SESSION_SECRET);
+
+// Perezoso: no leer env.SESSION_SECRET al importar el módulo (ver env.ts).
+function getSecret() {
+  return new TextEncoder().encode(getEnv().SESSION_SECRET);
+}
 
 function inactivityMs() {
-  return env.SESSION_INACTIVITY_MINUTES * 60 * 1000;
+  return getEnv().SESSION_INACTIVITY_MINUTES * 60 * 1000;
 }
 
 export async function crearSesion(user: SessionUser) {
@@ -17,7 +21,7 @@ export async function crearSesion(user: SessionUser) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(expira)
-    .sign(secret);
+    .sign(getSecret());
 
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
@@ -41,7 +45,7 @@ export async function obtenerSesion(): Promise<SessionUser | null> {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as unknown as SessionUser;
   } catch {
     return null;

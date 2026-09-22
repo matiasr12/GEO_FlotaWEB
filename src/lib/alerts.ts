@@ -1,6 +1,5 @@
 import "server-only";
 import { getMockAlerts } from "@/lib/mock-data";
-import { env } from "@/lib/env";
 import type { Alert } from "@/types/alert";
 
 // TODO: cuando el backend exponga un endpoint real de alertas (equipos
@@ -11,7 +10,6 @@ import type { Alert } from "@/types/alert";
 const reconocidas = new Set<string>();
 
 export async function listarAlertas(): Promise<Alert[]> {
-  void env; // reservado para cuando exista endpoint real
   return getMockAlerts().map((a) => ({
     ...a,
     reconocida: reconocidas.has(a.id),

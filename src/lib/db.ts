@@ -1,11 +1,12 @@
 import "server-only";
 import sql from "mssql";
-import { env } from "@/lib/env";
+import { getEnv } from "@/lib/env";
 
 let pool: sql.ConnectionPool | null = null;
 let pending: Promise<sql.ConnectionPool> | null = null;
 
 export function dbDisponible() {
+  const env = getEnv();
   return Boolean(
     env.AZURE_SQL_SERVER &&
       env.AZURE_SQL_DATABASE &&
@@ -24,6 +25,7 @@ export async function getPool(): Promise<sql.ConnectionPool> {
     );
   }
 
+  const env = getEnv();
   pending = new sql.ConnectionPool({
     server: env.AZURE_SQL_SERVER!,
     database: env.AZURE_SQL_DATABASE!,

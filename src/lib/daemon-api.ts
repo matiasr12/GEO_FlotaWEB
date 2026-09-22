@@ -1,5 +1,5 @@
 import "server-only";
-import { env } from "@/lib/env";
+import { getEnv } from "@/lib/env";
 import type { Device } from "@/types/device";
 import { getMockDevices } from "@/lib/mock-data";
 
@@ -14,6 +14,7 @@ import { getMockDevices } from "@/lib/mock-data";
  */
 
 async function fetchDaemonAPI<T>(path: string, init?: RequestInit): Promise<T> {
+  const env = getEnv();
   const res = await fetch(`${env.DAEMON_API_BASE_URL}${path}`, {
     ...init,
     headers: {
@@ -34,7 +35,7 @@ async function fetchDaemonAPI<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function listarEquipos(): Promise<Device[]> {
-  if (env.USE_MOCK_DATA) {
+  if (getEnv().USE_MOCK_DATA) {
     return getMockDevices();
   }
 

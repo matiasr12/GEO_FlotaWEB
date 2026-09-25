@@ -79,7 +79,10 @@ export function MapView({
         </LayersControl>
 
         {conUbicacion.map((d) => {
-          const color = d.dentroDeArea ? VERDE : ROJO;
+          // Un equipo sin señal (sin lectura reciente del daemon) nunca se
+          // muestra en verde, aunque su última posición conocida haya sido
+          // "dentro del área" — esa posición ya no es confiable.
+          const color = d.estado === "sin_senal" || !d.dentroDeArea ? ROJO : VERDE;
           const { lat, lng, precisionMetros, capturedAt } = d.ubicacion!;
 
           return (

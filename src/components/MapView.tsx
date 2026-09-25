@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapContainer, TileLayer, CircleMarker, Circle, Popup, Tooltip } from "react-leaflet";
+import { MapContainer, TileLayer, LayersControl, CircleMarker, Circle, Popup, Tooltip } from "react-leaflet";
 import type { Device } from "@/types/device";
 
 const VERDE = "#22c55e";
@@ -56,11 +56,22 @@ export function MapView({
         scrollWheelZoom
         style={{ height: "100%", width: "100%", background: "#0b1220" }}
       >
-        <TileLayer
-          className="map-tiles-dark"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <LayersControl position="topright">
+          <LayersControl.BaseLayer checked name="Satélite">
+            <TileLayer
+              attribution='Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              maxZoom={19}
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Calles">
+            <TileLayer
+              className="map-tiles-dark"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl>
 
         {conUbicacion.map((d) => {
           const color = d.dentroDeArea ? VERDE : ROJO;

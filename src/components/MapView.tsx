@@ -7,6 +7,11 @@ import type { Device } from "@/types/device";
 const VERDE = "#22c55e";
 const ROJO = "#ef4444";
 
+// Tope visual del círculo de precisión: con 100+ equipos, un radio real de
+// GPS (a veces 30-50m+) tapa media faena. Se limita a un tamaño legible sin
+// mover el centro, que siempre queda en la coordenada real del equipo.
+const RADIO_PRECISION_MAX_METROS = 8;
+
 // Fallback cuando todavía no hay ningún equipo con coordenadas válidas.
 const CENTRO_ATACAMA: [number, number] = [-27.37, -70.33];
 
@@ -82,7 +87,7 @@ export function MapView({
               {precisionMetros != null && (
                 <Circle
                   center={[lat, lng]}
-                  radius={precisionMetros}
+                  radius={Math.min(precisionMetros, RADIO_PRECISION_MAX_METROS)}
                   pathOptions={{
                     color,
                     fillColor: color,

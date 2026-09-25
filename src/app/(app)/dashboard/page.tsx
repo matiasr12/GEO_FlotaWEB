@@ -5,6 +5,7 @@ import { MapViewClient } from "@/components/MapViewClient";
 import { SemaforoCard } from "@/components/SemaforoCard";
 import { StatsPanel } from "@/components/StatsPanel";
 import { DeviceTable } from "@/components/DeviceTable";
+import { DashboardCharts } from "@/components/DashboardCharts";
 
 export default async function DashboardPage() {
   const user = await obtenerSesion();
@@ -41,6 +42,8 @@ export default async function DashboardPage() {
       </div>
 
       <DeviceTable devices={ordenados} pageSize={4} />
+
+      <DashboardCharts devices={devices} />
     </div>
   );
 }

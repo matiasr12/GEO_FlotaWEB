@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Pencil } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Pencil, RotateCw } from "lucide-react";
 import type { Device } from "@/types/device";
 import { StatusBadge } from "./StatusBadge";
 
@@ -16,6 +17,12 @@ export function DeviceTable({
 }) {
   const [pagina, setPagina] = useState(1);
   const totalPaginas = Math.max(1, Math.ceil(devices.length / pageSize));
+  const router = useRouter();
+  const [refrescando, startTransition] = useTransition();
+
+  function recargar() {
+    startTransition(() => router.refresh());
+  }
 
   const visibles = useMemo(() => {
     const inicio = (pagina - 1) * pageSize;
@@ -30,7 +37,19 @@ export function DeviceTable({
             <th className="px-5 py-3 font-medium">Hostname</th>
             <th className="px-5 py-3 font-medium">Custodio</th>
             <th className="px-5 py-3 font-medium">Ubicación</th>
-            <th className="px-5 py-3 font-medium">Estado</th>
+            <th className="px-5 py-3 font-medium">
+              <span className="inline-flex items-center gap-2">
+                Estado
+                <button
+                  onClick={recargar}
+                  disabled={refrescando}
+                  title="Actualizar dispositivos y mapa"
+                  className="rounded-full p-1 text-muted hover:bg-surface-alt hover:text-foreground disabled:opacity-50"
+                >
+                  <RotateCw className={`h-3.5 w-3.5 ${refrescando ? "animate-spin" : ""}`} />
+                </button>
+              </span>
+            </th>
             {onEdit && <th className="px-5 py-3 font-medium" />}
           </tr>
         </thead>

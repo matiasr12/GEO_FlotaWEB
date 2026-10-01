@@ -1,8 +1,8 @@
 import "server-only";
 import { dbDisponible, getPool, sql } from "@/lib/db";
-import type { SessionUser } from "@/types/user";
 
-// Fallback de desarrollo: aún no se ha corrido sql/004_device_comments.sql en Azure SQL.
+// Fallback de desarrollo: se usa si AZURE_SQL_* no está configurado, o
+// mientras no se corra sql/004_equipos_comentarios.sql en Azure SQL.
 const memoria = new Map<string, string>();
 
 export async function obtenerComentarios(): Promise<Record<string, string>> {
@@ -12,36 +12,31 @@ export async function obtenerComentarios(): Promise<Record<string, string>> {
 
   const pool = await getPool();
   const result = await pool.request().query(`
-    SELECT EquipoId, Comentario FROM DeviceComments
+    SELECT Id, Comentarios FROM Equipos WHERE Comentarios IS NOT NULL
   `);
 
-  return Object.fromEntries(result.recordset.map((r) => [r.EquipoId, r.Comentario]));
+  return Object.fromEntries(
+    result.recordset.map((r) => [String(r.Id), r.Comentarios as string])
+  );
 }
 
-export async function guardarComentario(
-  equipoId: string,
-  comentario: string,
-  user: SessionUser
-): Promise<void> {
+export async function guardarComentario(equipoId: string, comentario: string): Promise<void> {
   if (!dbDisponible()) {
     if (comentario) memoria.set(equipoId, comentario);
     else memoria.delete(equipoId);
     return;
   }
 
+  const id = Number(equipoId);
+  if (!Number.isInteger(id)) {
+    throw new Error(`equipoId inválido: ${equipoId}`);
+  }
+
   const pool = await getPool();
   await pool
     .request()
-    .input("equipoId", sql.NVarChar, equipoId)
-    .input("comentario", sql.NVarChar, comentario)
-    .input("updatedBy", sql.NVarChar, user.email).query(`
-      MERGE DeviceComments AS target
-      USING (SELECT @equipoId AS EquipoId) AS source
-      ON target.EquipoId = source.EquipoId
-      WHEN MATCHED THEN
-        UPDATE SET Comentario = @comentario, UpdatedBy = @updatedBy, UpdatedAt = SYSUTCDATETIME()
-      WHEN NOT MATCHED THEN
-        INSERT (EquipoId, Comentario, UpdatedBy, UpdatedAt)
-        VALUES (@equipoId, @comentario, @updatedBy, SYSUTCDATETIME());
+    .input("id", sql.Int, id)
+    .input("comentario", sql.NVarChar, comentario || null).query(`
+      UPDATE Equipos SET Comentarios = @comentario WHERE Id = @id
     `);
 }

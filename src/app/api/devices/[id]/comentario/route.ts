@@ -24,7 +24,7 @@ export async function PUT(
   }
 
   const { id } = await params;
-  await guardarComentario(id, parsed.data.comentario.trim(), user);
+  await guardarComentario(id, parsed.data.comentario.trim());
   await registrarAuditoria({ user, action: "comentar_equipo", detalle: id });
 
   return NextResponse.json({ ok: true });

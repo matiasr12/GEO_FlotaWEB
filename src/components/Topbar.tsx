@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, usePathname } from "next/navigation";
-import Image from "next/image";
 import { Bell, UserCircle2, LogOut } from "lucide-react";
 import { useState } from "react";
 import type { SessionUser } from "@/types/user";
@@ -41,13 +40,12 @@ export function Topbar({ user, alertas }: { user: SessionUser; alertas: number }
       </h1>
 
       <div className="flex items-center gap-5">
-        <Image
+        {/* <img> plano a propósito: el optimizador de next/image falla en el
+            plan F1 de Azure, y un logo estático chico no lo necesita. */}
+        <img
           src="/logo-web.png"
           alt="Caserones — SCM Minera Lumina Copper Chile"
-          width={140}
-          height={36}
           className="h-8 w-auto object-contain"
-          priority
         />
 
         <div className="relative">

@@ -20,15 +20,13 @@ const ESTADO_LABEL: Record<DeviceStatus, string> = {
   sin_senal: "Sin señal",
 };
 
-function ubicacionTexto(d: Device) {
-  return d.ubicacion
-    ? `${d.ubicacion.lat.toFixed(4)}, ${d.ubicacion.lng.toFixed(4)}`
-    : (d.areaDetectada ?? d.area ?? "—");
+function areaTexto(d: Device) {
+  return d.areaDetectada ?? d.area ?? d.faena ?? "—";
 }
 
 function descargarCSV(devices: Device[]) {
-  const encabezados = ["Hostname", "Custodio", "Ubicacion", "Estado"];
-  const filas = devices.map((d) => [d.hostname, d.custodioNombre, ubicacionTexto(d), ESTADO_LABEL[d.estado]]);
+  const encabezados = ["Hostname", "Custodio", "Area", "Estado"];
+  const filas = devices.map((d) => [d.hostname, d.custodioNombre, areaTexto(d), ESTADO_LABEL[d.estado]]);
   const escapar = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
   const csv = [encabezados, ...filas].map((fila) => fila.map(escapar).join(",")).join("\r\n");
 
@@ -53,7 +51,7 @@ export function DeviceTable({
   const [pagina, setPagina] = useState(1);
   const [filtroHostname, setFiltroHostname] = useState("");
   const [filtroCustodio, setFiltroCustodio] = useState("");
-  const [filtroUbicacion, setFiltroUbicacion] = useState("");
+  const [filtroArea, setFiltroArea] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<"" | DeviceStatus>("");
   const router = useRouter();
   const [refrescando, startTransition] = useTransition();
@@ -72,15 +70,15 @@ export function DeviceTable({
   const filtrados = useMemo(() => {
     const h = filtroHostname.trim().toLowerCase();
     const c = filtroCustodio.trim().toLowerCase();
-    const u = filtroUbicacion.trim().toLowerCase();
+    const a = filtroArea.trim().toLowerCase();
     return devices.filter(
       (d) =>
         (!h || d.hostname.toLowerCase().includes(h)) &&
         (!c || d.custodioNombre.toLowerCase().includes(c)) &&
-        (!u || ubicacionTexto(d).toLowerCase().includes(u)) &&
+        (!a || areaTexto(d).toLowerCase().includes(a)) &&
         (!filtroEstado || d.estado === filtroEstado)
     );
-  }, [devices, filtroHostname, filtroCustodio, filtroUbicacion, filtroEstado]);
+  }, [devices, filtroHostname, filtroCustodio, filtroArea, filtroEstado]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
 
@@ -96,7 +94,7 @@ export function DeviceTable({
           <tr className="border-b border-border text-muted">
             <th className="px-5 py-3 font-medium">Hostname</th>
             <th className="px-5 py-3 font-medium">Custodio</th>
-            <th className="px-5 py-3 font-medium">Ubicación</th>
+            <th className="px-5 py-3 font-medium">Área</th>
             <th className="px-5 py-3 font-medium">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-2">
@@ -128,7 +126,7 @@ export function DeviceTable({
                 value={filtroHostname}
                 onChange={(e) => conReinicioDePagina(setFiltroHostname)(e.target.value)}
                 placeholder="Filtrar..."
-                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full border-b border-border bg-transparent py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
               />
             </th>
             <th className="px-5 pb-3 font-normal">
@@ -136,27 +134,27 @@ export function DeviceTable({
                 value={filtroCustodio}
                 onChange={(e) => conReinicioDePagina(setFiltroCustodio)(e.target.value)}
                 placeholder="Filtrar..."
-                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full border-b border-border bg-transparent py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
               />
             </th>
             <th className="px-5 pb-3 font-normal">
               <input
-                value={filtroUbicacion}
-                onChange={(e) => conReinicioDePagina(setFiltroUbicacion)(e.target.value)}
+                value={filtroArea}
+                onChange={(e) => conReinicioDePagina(setFiltroArea)(e.target.value)}
                 placeholder="Filtrar..."
-                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full border-b border-border bg-transparent py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
               />
             </th>
             <th className="px-5 pb-3 font-normal">
               <select
                 value={filtroEstado}
                 onChange={(e) => conReinicioDePagina(setFiltroEstado)(e.target.value as "" | DeviceStatus)}
-                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+                className="w-full border-b border-border bg-transparent py-1 text-xs text-muted focus:outline-none focus:border-accent"
               >
-                <option value="">Todos</option>
-                <option value="normal">Normal</option>
-                <option value="alerta">Alerta</option>
-                <option value="sin_senal">Sin señal</option>
+                <option value="" className="bg-surface text-foreground">Todos</option>
+                <option value="normal" className="bg-surface text-foreground">Normal</option>
+                <option value="alerta" className="bg-surface text-foreground">Alerta</option>
+                <option value="sin_senal" className="bg-surface text-foreground">Sin señal</option>
               </select>
             </th>
             {onEdit && <th className="px-5 pb-3" />}
@@ -177,11 +175,7 @@ export function DeviceTable({
                 </span>
               </td>
               <td className="px-5 py-3 text-muted">{d.custodioNombre}</td>
-              <td className="px-5 py-3 text-muted">
-                {d.ubicacion
-                  ? `${d.ubicacion.lat.toFixed(4)}, ${d.ubicacion.lng.toFixed(4)}`
-                  : (d.areaDetectada ?? d.area ?? "—")}
-              </td>
+              <td className="px-5 py-3 text-muted">{areaTexto(d)}</td>
               <td className="px-5 py-3">
                 <StatusBadge estado={d.estado} />
               </td>

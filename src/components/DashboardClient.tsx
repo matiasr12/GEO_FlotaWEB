@@ -53,7 +53,7 @@ export function DashboardClient({
         onFiltrados={setFiltrados}
       />
 
-      <DashboardCharts devices={devices} />
+      <DashboardCharts devices={filtrados} />
     </div>
   );
 }

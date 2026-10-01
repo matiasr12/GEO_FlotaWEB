@@ -2,9 +2,44 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Pencil, RotateCw } from "lucide-react";
-import type { Device } from "@/types/device";
+import {
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+  Pencil,
+  RotateCw,
+  Download,
+} from "lucide-react";
+import type { Device, DeviceStatus } from "@/types/device";
 import { StatusBadge } from "./StatusBadge";
+
+const ESTADO_LABEL: Record<DeviceStatus, string> = {
+  normal: "Normal",
+  alerta: "Alerta",
+  sin_senal: "Sin señal",
+};
+
+function ubicacionTexto(d: Device) {
+  return d.ubicacion
+    ? `${d.ubicacion.lat.toFixed(4)}, ${d.ubicacion.lng.toFixed(4)}`
+    : (d.areaDetectada ?? d.area ?? "—");
+}
+
+function descargarCSV(devices: Device[]) {
+  const encabezados = ["Hostname", "Custodio", "Ubicacion", "Estado"];
+  const filas = devices.map((d) => [d.hostname, d.custodioNombre, ubicacionTexto(d), ESTADO_LABEL[d.estado]]);
+  const escapar = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
+  const csv = [encabezados, ...filas].map((fila) => fila.map(escapar).join(",")).join("\r\n");
+
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `equipos_${new Date().toISOString().slice(0, 10)}.csv`;
+  enlace.click();
+  URL.revokeObjectURL(url);
+}
 
 export function DeviceTable({
   devices,
@@ -16,7 +51,10 @@ export function DeviceTable({
   onEdit?: (device: Device) => void;
 }) {
   const [pagina, setPagina] = useState(1);
-  const totalPaginas = Math.max(1, Math.ceil(devices.length / pageSize));
+  const [filtroHostname, setFiltroHostname] = useState("");
+  const [filtroCustodio, setFiltroCustodio] = useState("");
+  const [filtroUbicacion, setFiltroUbicacion] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState<"" | DeviceStatus>("");
   const router = useRouter();
   const [refrescando, startTransition] = useTransition();
 
@@ -24,10 +62,32 @@ export function DeviceTable({
     startTransition(() => router.refresh());
   }
 
+  function conReinicioDePagina<T>(setter: (v: T) => void) {
+    return (v: T) => {
+      setter(v);
+      setPagina(1);
+    };
+  }
+
+  const filtrados = useMemo(() => {
+    const h = filtroHostname.trim().toLowerCase();
+    const c = filtroCustodio.trim().toLowerCase();
+    const u = filtroUbicacion.trim().toLowerCase();
+    return devices.filter(
+      (d) =>
+        (!h || d.hostname.toLowerCase().includes(h)) &&
+        (!c || d.custodioNombre.toLowerCase().includes(c)) &&
+        (!u || ubicacionTexto(d).toLowerCase().includes(u)) &&
+        (!filtroEstado || d.estado === filtroEstado)
+    );
+  }, [devices, filtroHostname, filtroCustodio, filtroUbicacion, filtroEstado]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
+
   const visibles = useMemo(() => {
     const inicio = (pagina - 1) * pageSize;
-    return devices.slice(inicio, inicio + pageSize);
-  }, [devices, pagina, pageSize]);
+    return filtrados.slice(inicio, inicio + pageSize);
+  }, [filtrados, pagina, pageSize]);
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
@@ -38,19 +98,68 @@ export function DeviceTable({
             <th className="px-5 py-3 font-medium">Custodio</th>
             <th className="px-5 py-3 font-medium">Ubicación</th>
             <th className="px-5 py-3 font-medium">
-              <span className="inline-flex items-center gap-2">
-                Estado
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-2">
+                  Estado
+                  <button
+                    onClick={recargar}
+                    disabled={refrescando}
+                    title="Actualizar dispositivos y mapa"
+                    className="rounded-full p-1 text-muted hover:bg-surface-alt hover:text-foreground disabled:opacity-50"
+                  >
+                    <RotateCw className={`h-3.5 w-3.5 ${refrescando ? "animate-spin" : ""}`} />
+                  </button>
+                </span>
                 <button
-                  onClick={recargar}
-                  disabled={refrescando}
-                  title="Actualizar dispositivos y mapa"
-                  className="rounded-full p-1 text-muted hover:bg-surface-alt hover:text-foreground disabled:opacity-50"
+                  onClick={() => descargarCSV(filtrados)}
+                  title="Descargar en Excel"
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-normal text-muted hover:bg-surface-alt hover:text-foreground"
                 >
-                  <RotateCw className={`h-3.5 w-3.5 ${refrescando ? "animate-spin" : ""}`} />
+                  <Download className="h-3.5 w-3.5" />
+                  Excel
                 </button>
-              </span>
+              </div>
             </th>
             {onEdit && <th className="px-5 py-3 font-medium" />}
+          </tr>
+          <tr className="border-b border-border">
+            <th className="px-5 pb-3 font-normal">
+              <input
+                value={filtroHostname}
+                onChange={(e) => conReinicioDePagina(setFiltroHostname)(e.target.value)}
+                placeholder="Filtrar..."
+                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+              />
+            </th>
+            <th className="px-5 pb-3 font-normal">
+              <input
+                value={filtroCustodio}
+                onChange={(e) => conReinicioDePagina(setFiltroCustodio)(e.target.value)}
+                placeholder="Filtrar..."
+                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+              />
+            </th>
+            <th className="px-5 pb-3 font-normal">
+              <input
+                value={filtroUbicacion}
+                onChange={(e) => conReinicioDePagina(setFiltroUbicacion)(e.target.value)}
+                placeholder="Filtrar..."
+                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-accent"
+              />
+            </th>
+            <th className="px-5 pb-3 font-normal">
+              <select
+                value={filtroEstado}
+                onChange={(e) => conReinicioDePagina(setFiltroEstado)(e.target.value as "" | DeviceStatus)}
+                className="w-full rounded-md border border-border bg-surface-alt px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                <option value="">Todos</option>
+                <option value="normal">Normal</option>
+                <option value="alerta">Alerta</option>
+                <option value="sin_senal">Sin señal</option>
+              </select>
+            </th>
+            {onEdit && <th className="px-5 pb-3" />}
           </tr>
         </thead>
         <tbody>

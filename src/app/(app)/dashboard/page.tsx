@@ -1,6 +1,8 @@
 import { obtenerSesion } from "@/lib/auth/session";
 import { listarEquipos } from "@/lib/daemon-api";
 import { registrarAuditoria } from "@/lib/audit";
+import { tienePermiso } from "@/lib/auth/rbac";
+import { obtenerComentarios } from "@/lib/device-comments";
 import { MapViewClient } from "@/components/MapViewClient";
 import { SemaforoCard } from "@/components/SemaforoCard";
 import { StatsPanel } from "@/components/StatsPanel";
@@ -9,7 +11,8 @@ import { DashboardCharts } from "@/components/DashboardCharts";
 
 export default async function DashboardPage() {
   const user = await obtenerSesion();
-  const devices = await listarEquipos();
+  const [devicesRaw, comentarios] = await Promise.all([listarEquipos(), obtenerComentarios()]);
+  const devices = devicesRaw.map((d) => ({ ...d, comentario: comentarios[d.id] ?? null }));
 
   if (user) {
     await registrarAuditoria({ user, action: "ver_dashboard" });
@@ -41,7 +44,11 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <DeviceTable devices={ordenados} pageSize={4} />
+      <DeviceTable
+        devices={ordenados}
+        pageSize={4}
+        puedeComentar={user ? tienePermiso(user.role, "inventario:editar") : false}
+      />
 
       <DashboardCharts devices={devices} />
     </div>

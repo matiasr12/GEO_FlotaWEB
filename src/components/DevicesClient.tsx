@@ -50,6 +50,7 @@ export function DevicesClient({
       <DeviceTable
         devices={devices}
         pageSize={10}
+        puedeComentar={puedeEditar}
         onEdit={
           puedeEditar
             ? (d) => {

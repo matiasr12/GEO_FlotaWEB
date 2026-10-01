@@ -7,6 +7,7 @@ export type AuditAction =
   | "ver_inventario"
   | "crear_equipo"
   | "editar_equipo"
+  | "comentar_equipo"
   | "eliminar_equipo"
   | "reconocer_alerta"
   | "solicitud_titular_datos";

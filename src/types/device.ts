@@ -24,6 +24,9 @@ export interface Device {
   connectionType?: "wifi" | "ethernet" | "movil" | null;
   ip?: string | null;
   ultimaTelemetria?: string | null; // receivedAt del backend
+  // Nota libre del supervisor/admin (ej. "pantalla con fallas"), guardada en
+  // la base propia del panel — no viene del daemon. Ver lib/device-comments.ts.
+  comentario?: string | null;
 }
 
 // Forma real de un elemento de GET /api/equipos (ver db.js:207-255 del backend).

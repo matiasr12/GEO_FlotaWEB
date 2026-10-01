@@ -10,6 +10,7 @@ import {
   Pencil,
   RotateCw,
   Download,
+  Check,
 } from "lucide-react";
 import type { Device, DeviceStatus } from "@/types/device";
 import { StatusBadge } from "./StatusBadge";
@@ -25,8 +26,14 @@ function areaTexto(d: Device) {
 }
 
 function descargarCSV(devices: Device[]) {
-  const encabezados = ["Hostname", "Custodio", "Area", "Estado"];
-  const filas = devices.map((d) => [d.hostname, d.custodioNombre, areaTexto(d), ESTADO_LABEL[d.estado]]);
+  const encabezados = ["Hostname", "Custodio", "Area", "Estado", "Comentario"];
+  const filas = devices.map((d) => [
+    d.hostname,
+    d.custodioNombre,
+    areaTexto(d),
+    ESTADO_LABEL[d.estado],
+    d.comentario ?? "",
+  ]);
   const escapar = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
   const csv = [encabezados, ...filas].map((fila) => fila.map(escapar).join(",")).join("\r\n");
 
@@ -39,14 +46,59 @@ function descargarCSV(devices: Device[]) {
   URL.revokeObjectURL(url);
 }
 
+function ComentarioCell({ device, editable }: { device: Device; editable: boolean }) {
+  const [valor, setValor] = useState(device.comentario ?? "");
+  const [guardado, setGuardado] = useState(device.comentario ?? "");
+  const [guardando, setGuardando] = useState(false);
+  const [confirmado, setConfirmado] = useState(false);
+
+  async function guardar() {
+    if (valor === guardado) return;
+    setGuardando(true);
+    try {
+      await fetch(`/api/devices/${device.id}/comentario`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comentario: valor }),
+      });
+      setGuardado(valor);
+      setConfirmado(true);
+      setTimeout(() => setConfirmado(false), 1500);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  if (!editable) {
+    return <span className="text-muted">{device.comentario || "—"}</span>;
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        value={valor}
+        onChange={(e) => setValor(e.target.value)}
+        onBlur={guardar}
+        placeholder="Agregar comentario..."
+        maxLength={500}
+        className="w-full border-b border-border bg-transparent py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
+      />
+      {guardando && <span className="shrink-0 text-[10px] text-muted">…</span>}
+      {!guardando && confirmado && <Check className="h-3.5 w-3.5 shrink-0 text-success" />}
+    </div>
+  );
+}
+
 export function DeviceTable({
   devices,
   pageSize = 4,
   onEdit,
+  puedeComentar = false,
 }: {
   devices: Device[];
   pageSize?: number;
   onEdit?: (device: Device) => void;
+  puedeComentar?: boolean;
 }) {
   const [pagina, setPagina] = useState(1);
   const [filtroHostname, setFiltroHostname] = useState("");
@@ -118,6 +170,7 @@ export function DeviceTable({
                 </button>
               </div>
             </th>
+            <th className="px-5 py-3 font-medium">Comentario</th>
             {onEdit && <th className="px-5 py-3 font-medium" />}
           </tr>
           <tr className="border-b border-border">
@@ -157,6 +210,7 @@ export function DeviceTable({
                 <option value="sin_senal" className="bg-surface text-foreground">Sin señal</option>
               </select>
             </th>
+            <th className="px-5 pb-3" />
             {onEdit && <th className="px-5 pb-3" />}
           </tr>
         </thead>
@@ -178,6 +232,9 @@ export function DeviceTable({
               <td className="px-5 py-3 text-muted">{areaTexto(d)}</td>
               <td className="px-5 py-3">
                 <StatusBadge estado={d.estado} />
+              </td>
+              <td className="px-5 py-3">
+                <ComentarioCell device={d} editable={puedeComentar} />
               </td>
               {onEdit && (
                 <td className="px-5 py-3 text-right">

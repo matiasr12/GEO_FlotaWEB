@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronsLeft,
@@ -94,11 +94,15 @@ export function DeviceTable({
   pageSize = 4,
   onEdit,
   puedeComentar = false,
+  onFiltrados,
 }: {
   devices: Device[];
   pageSize?: number;
   onEdit?: (device: Device) => void;
   puedeComentar?: boolean;
+  // Avisa hacia afuera qué equipos quedaron visibles tras los filtros —
+  // el dashboard lo usa para que el mapa muestre solo lo que se buscó.
+  onFiltrados?: (devices: Device[]) => void;
 }) {
   const [pagina, setPagina] = useState(1);
   const [filtroHostname, setFiltroHostname] = useState("");
@@ -131,6 +135,10 @@ export function DeviceTable({
         (!filtroEstado || d.estado === filtroEstado)
     );
   }, [devices, filtroHostname, filtroCustodio, filtroArea, filtroEstado]);
+
+  useEffect(() => {
+    onFiltrados?.(filtrados);
+  }, [filtrados, onFiltrados]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / pageSize));
 

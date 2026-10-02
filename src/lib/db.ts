@@ -31,6 +31,11 @@ export async function getPool(): Promise<sql.ConnectionPool> {
     database: env.AZURE_SQL_DATABASE!,
     user: env.AZURE_SQL_USER!,
     password: env.AZURE_SQL_PASSWORD!,
+    // La base es Azure SQL Serverless (se pausa sola y tarda en "despertar"
+    // con la primera consulta tras estar inactiva) — el timeout por
+    // defecto de 15s no alcanza para ese arranque en frío.
+    connectionTimeout: 30000,
+    requestTimeout: 30000,
     options: {
       encrypt: true, // obligatorio para Azure SQL
       trustServerCertificate: false,
@@ -41,6 +46,13 @@ export async function getPool(): Promise<sql.ConnectionPool> {
       pool = p;
       pending = null;
       return p;
+    })
+    .catch((err) => {
+      // Sin esto, un primer intento fallido (ej. DB recién despertando)
+      // deja `pending` apuntando a una promesa ya rechazada para siempre,
+      // y todo login posterior fallaría sin volver a intentar.
+      pending = null;
+      throw err;
     });
 
   return pending;

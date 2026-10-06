@@ -123,15 +123,19 @@ export function DeviceTable({
     };
   }
 
+  const areasDisponibles = useMemo(() => {
+    const set = new Set(devices.map((d) => areaTexto(d)).filter((a) => a !== "—"));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+  }, [devices]);
+
   const filtrados = useMemo(() => {
     const h = filtroHostname.trim().toLowerCase();
     const c = filtroCustodio.trim().toLowerCase();
-    const a = filtroArea.trim().toLowerCase();
     return devices.filter(
       (d) =>
         (!h || d.hostname.toLowerCase().includes(h)) &&
         (!c || d.custodioNombre.toLowerCase().includes(c)) &&
-        (!a || areaTexto(d).toLowerCase().includes(a)) &&
+        (!filtroArea || areaTexto(d) === filtroArea) &&
         (!filtroEstado || d.estado === filtroEstado)
     );
   }, [devices, filtroHostname, filtroCustodio, filtroArea, filtroEstado]);
@@ -199,12 +203,18 @@ export function DeviceTable({
               />
             </th>
             <th className="px-5 pb-3 font-normal">
-              <input
+              <select
                 value={filtroArea}
                 onChange={(e) => conReinicioDePagina(setFiltroArea)(e.target.value)}
-                placeholder="Filtrar..."
-                className="w-full border-b border-border bg-transparent py-1 text-xs text-foreground placeholder:text-muted/60 focus:outline-none focus:border-accent"
-              />
+                className="w-full border-b border-border bg-transparent py-1 text-xs text-muted focus:outline-none focus:border-accent"
+              >
+                <option value="" className="bg-surface text-foreground">Todas</option>
+                {areasDisponibles.map((area) => (
+                  <option key={area} value={area} className="bg-surface text-foreground">
+                    {area}
+                  </option>
+                ))}
+              </select>
             </th>
             <th className="px-5 pb-3 font-normal">
               <select

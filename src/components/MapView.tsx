@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, LayersControl, CircleMarker, Circle, Popup, To
 import type { Device } from "@/types/device";
 
 const VERDE = "#22c55e";
+const AMARILLO = "#eab308";
 const ROJO = "#ef4444";
 
 // Tope visual del círculo de precisión: con 100+ equipos, un radio real de
@@ -79,10 +80,13 @@ export function MapView({
         </LayersControl>
 
         {conUbicacion.map((d) => {
-          // Un equipo sin señal (sin lectura reciente del daemon) nunca se
-          // muestra en verde, aunque su última posición conocida haya sido
-          // "dentro del área" — esa posición ya no es confiable.
-          const color = d.estado === "sin_senal" || !d.dentroDeArea ? ROJO : VERDE;
+          // Sin señal (sin lectura reciente del daemon) = rojo, siempre —
+          // esa posición ya no es confiable, aunque haya sido "dentro del
+          // área" la última vez. Alerta (fuera de la geocerca, pero con
+          // señal activa) = amarillo, para distinguirlo de un equipo
+          // realmente desconectado.
+          const color =
+            d.estado === "sin_senal" ? ROJO : d.estado === "alerta" ? AMARILLO : VERDE;
           const { lat, lng, precisionMetros, capturedAt } = d.ubicacion!;
 
           return (

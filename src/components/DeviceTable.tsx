@@ -19,6 +19,7 @@ const ESTADO_LABEL: Record<DeviceStatus, string> = {
   normal: "Normal",
   alerta: "Alerta",
   sin_senal: "Sin señal",
+  fuera_de_turno: "Fuera de turno",
 };
 
 function areaTexto(d: Device) {
@@ -226,6 +227,7 @@ export function DeviceTable({
                 <option value="normal" className="bg-surface text-foreground">Normal</option>
                 <option value="alerta" className="bg-surface text-foreground">Alerta</option>
                 <option value="sin_senal" className="bg-surface text-foreground">Sin señal</option>
+                <option value="fuera_de_turno" className="bg-surface text-foreground">Fuera de turno</option>
               </select>
             </th>
             <th className="px-5 pb-3" />
@@ -246,7 +248,10 @@ export function DeviceTable({
                   {d.estado === "alerta" && <span title="Alerta">⚠️</span>}
                 </span>
               </td>
-              <td className="px-5 py-3 text-muted">{d.custodioNombre}</td>
+              <td className="px-5 py-3 text-muted">
+                {d.custodioNombre}
+                {d.turno && <div className="text-xs text-muted/70">{d.turno}</div>}
+              </td>
               <td className="px-5 py-3 text-muted">{areaTexto(d)}</td>
               <td className="px-5 py-3">
                 <StatusBadge estado={d.estado} />

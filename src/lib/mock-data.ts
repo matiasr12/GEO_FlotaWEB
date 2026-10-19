@@ -10,6 +10,8 @@ import type { Device } from "@/types/device";
 // tenga, y agregarlo como un segundo punto de referencia en el mapa.
 const CENTRO_FAENA = { lat: -28.169, lng: -69.5336 };
 
+const TURNOS = ["7x7 Equipo A", "7x7 Equipo B", "4x3 Día", "4x3 Noche"];
+
 const NOMBRES = [
   "Juan Pérez",
   "María Gómez",
@@ -47,12 +49,17 @@ export function getMockDevices(): Device[] {
     const jitterLat = (rand() - 0.5) * 0.04;
     const jitterLng = (rand() - 0.5) * 0.04;
     const sinSenal = rand() < 0.018; // ~8 equipos sin señal reciente
+    // De los que están sin señal, la mitad es porque el custodio
+    // simplemente no está de turno (no debería preocupar), la otra mitad
+    // es una desconexión real estando en turno.
+    const fueraDeTurno = sinSenal && rand() < 0.5;
 
     devices.push({
       id: `dev-${num}`,
       hostname: `CLMLCCLT${String(num).padStart(6, "0")}`,
       custodioNombre: NOMBRES[i % NOMBRES.length],
       custodioId: `custodio-${i % NOMBRES.length}`,
+      turno: TURNOS[i % TURNOS.length],
       ubicacion: sinSenal
         ? null
         : {
@@ -60,7 +67,7 @@ export function getMockDevices(): Device[] {
             lng: CENTRO_FAENA.lng + jitterLng,
             capturedAt: new Date(Date.now() - rand() * 3600_000).toISOString(),
           },
-      estado: sinSenal ? "sin_senal" : "normal",
+      estado: fueraDeTurno ? "fuera_de_turno" : sinSenal ? "sin_senal" : "normal",
       dentroDeArea: true,
     });
   }
@@ -74,6 +81,7 @@ export function getMockDevices(): Device[] {
     hostname: "CLMLCCLT000990",
     custodioNombre: "Juan Pérez",
     custodioId: "custodio-juan-perez",
+    turno: "7x7 Equipo A",
     ubicacion: {
       lat: CENTRO_FAENA.lat + 0.045,
       lng: CENTRO_FAENA.lng - 0.07,

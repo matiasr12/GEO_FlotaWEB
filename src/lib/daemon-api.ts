@@ -16,25 +16,33 @@ import { getMockDevices } from "@/lib/mock-data";
 
 const SIN_SENAL_MINUTOS = 30;
 
-// GET /api/equipos ahora resuelve latitud/longitud cruzando el BSSID
-// visto por el equipo contra BssidsArea (mismo backend, misma fila que
-// ya usaba para areaDetectada). Si el equipo no tiene ningún BSSID
-// conocido, el backend manda null y acá se deja sin ubicación en vez de
-// inventar coordenadas.
+// GET /api/equipos resuelve latitud/longitud con el servicio de
+// ubicación del propio notebook (Windows/Google) — BssidsArea solo queda
+// como respaldo para cuando esa ubicación no es confiable. Si el equipo
+// no tiene ubicación disponible, el backend manda null y acá se deja sin
+// ubicación en vez de inventar coordenadas.
 function mapEquipoToDevice(e: EquipoApiDTO): Device {
   const nombre = [e.personalNombre, e.personalApellido].filter(Boolean).join(" ").trim();
   const ultimaLectura = e.receivedAt ? new Date(e.receivedAt).getTime() : NaN;
   const minutosDesdeUltimaLectura = (Date.now() - ultimaLectura) / 60_000;
+  const sinSenal =
+    Number.isNaN(minutosDesdeUltimaLectura) || minutosDesdeUltimaLectura > SIN_SENAL_MINUTOS;
 
   // Sin receivedAt (nunca reportó) o con una fecha inválida cuenta como
   // sin señal, no como "normal" (Number.isNaN(minutos) antes se colaba
   // como false en la comparación y lo dejaba pasar por normal/alerta).
+  // "fuera_de_turno" es un sub-caso de sin señal: el custodio no debería
+  // estar reportando porque no está en su horario (enTurno === false).
+  // Si no tiene turno asignado (null) o si está en turno, sin señal
+  // sigue siendo sin_senal a secas — ahí sí preocupa que no reporte.
   const estado =
-    Number.isNaN(minutosDesdeUltimaLectura) || minutosDesdeUltimaLectura > SIN_SENAL_MINUTOS
-      ? "sin_senal"
-      : e.alerta
-        ? "alerta"
-        : "normal";
+    sinSenal && e.enTurno === false
+      ? "fuera_de_turno"
+      : sinSenal
+        ? "sin_senal"
+        : e.alerta
+          ? "alerta"
+          : "normal";
 
   const ubicacion =
     e.latitud != null && e.longitud != null
@@ -54,6 +62,7 @@ function mapEquipoToDevice(e: EquipoApiDTO): Device {
     ubicacion,
     estado,
     dentroDeArea: !e.alerta,
+    turno: e.turno,
     faena: e.faena,
     area: e.area,
     areaDetectada: e.areaDetectada,

@@ -7,6 +7,7 @@ import type { Device } from "@/types/device";
 const VERDE = "#22c55e";
 const AMARILLO = "#eab308";
 const ROJO = "#ef4444";
+const GRIS = "#8ea0c0";
 
 // Tope visual del círculo de precisión: con 100+ equipos, un radio real de
 // GPS (a veces 30-50m+) tapa media faena. Se limita a un tamaño legible sin
@@ -83,10 +84,17 @@ export function MapView({
           // Sin señal (sin lectura reciente del daemon) = rojo, siempre —
           // esa posición ya no es confiable, aunque haya sido "dentro del
           // área" la última vez. Alerta (fuera de la geocerca, pero con
-          // señal activa) = amarillo, para distinguirlo de un equipo
-          // realmente desconectado.
+          // señal activa) = amarillo. Fuera de turno (sin señal, pero el
+          // custodio no debería estar reportando) = gris, para no
+          // confundirlo con una desconexión real.
           const color =
-            d.estado === "sin_senal" ? ROJO : d.estado === "alerta" ? AMARILLO : VERDE;
+            d.estado === "sin_senal"
+              ? ROJO
+              : d.estado === "fuera_de_turno"
+                ? GRIS
+                : d.estado === "alerta"
+                  ? AMARILLO
+                  : VERDE;
           const { lat, lng, precisionMetros, capturedAt } = d.ubicacion!;
 
           return (

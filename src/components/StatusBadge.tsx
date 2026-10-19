@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, WifiOff } from "lucide-react";
+import { CheckCircle2, XCircle, WifiOff, Moon } from "lucide-react";
 import type { DeviceStatus } from "@/types/device";
 
 const CONFIG: Record<DeviceStatus, { label: string; className: string; icon: typeof CheckCircle2 }> = {
@@ -9,13 +9,18 @@ const CONFIG: Record<DeviceStatus, { label: string; className: string; icon: typ
   },
   alerta: {
     label: "CRÍTICO",
-    className: "bg-danger/15 text-danger",
+    className: "bg-warning/15 text-warning",
     icon: XCircle,
   },
   sin_senal: {
     label: "SIN SEÑAL",
-    className: "bg-muted/20 text-muted",
+    className: "bg-danger/15 text-danger",
     icon: WifiOff,
+  },
+  fuera_de_turno: {
+    label: "FUERA DE TURNO",
+    className: "bg-muted/20 text-muted",
+    icon: Moon,
   },
 };
 

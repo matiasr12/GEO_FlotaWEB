@@ -1,4 +1,4 @@
-export type DeviceStatus = "normal" | "alerta" | "sin_senal";
+export type DeviceStatus = "normal" | "alerta" | "sin_senal" | "fuera_de_turno";
 
 export interface DevicePosition {
   lat: number;
@@ -15,7 +15,7 @@ export interface Device {
   ubicacion: DevicePosition | null;
   estado: DeviceStatus;
   dentroDeArea: boolean;
-  turno?: string;
+  turno?: string | null;
   // Campos reales del backend (GET /api/equipos), no todos tienen
   // equivalente en la maqueta original — se muestran cuando existen.
   faena?: string | null;
@@ -49,6 +49,8 @@ export interface EquipoApiDTO {
   latitud: number | null;
   longitud: number | null;
   precisionMetros: number | null;
+  turno: string | null;
+  enTurno: boolean | null;
 }
 
 export interface DeviceInput {

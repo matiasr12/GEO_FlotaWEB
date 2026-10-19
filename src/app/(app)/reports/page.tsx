@@ -13,6 +13,7 @@ export default async function ReportsPage() {
   const normal = devices.filter((d) => d.estado === "normal").length;
   const alerta = devices.filter((d) => d.estado === "alerta").length;
   const sinSenal = devices.filter((d) => d.estado === "sin_senal").length;
+  const fueraDeTurno = devices.filter((d) => d.estado === "fuera_de_turno").length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -24,10 +25,11 @@ export default async function ReportsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ResumenCard label="Equipos normales" valor={normal} color="text-success" />
-        <ResumenCard label="Equipos en alerta" valor={alerta} color="text-danger" />
-        <ResumenCard label="Sin señal reciente" valor={sinSenal} color="text-muted" />
+        <ResumenCard label="Equipos en alerta" valor={alerta} color="text-warning" />
+        <ResumenCard label="Sin señal reciente" valor={sinSenal} color="text-danger" />
+        <ResumenCard label="Fuera de turno" valor={fueraDeTurno} color="text-muted" />
       </div>
     </div>
   );

@@ -10,6 +10,7 @@
   --muted: #8ea0c0;
   --accent: #3b82f6;
   --danger: #ef4444;
+  --warning: #eab308;
   --success: #22c55e;
 }
 
@@ -22,6 +23,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-danger: var(--danger);
+  --color-warning: var(--warning);
   --color-success: var(--success);
 }
 

@@ -10,6 +10,7 @@ export type AuditAction =
   | "comentar_equipo"
   | "eliminar_equipo"
   | "reconocer_alerta"
+  | "comentar_alerta"
   | "solicitud_titular_datos";
 
 export interface AuditLogEntry {

@@ -15,7 +15,10 @@ import {
 } from "recharts";
 import type { Device, DeviceStatus } from "@/types/device";
 
+// Mismos colores que MapView.tsx a propósito — un equipo debe verse del
+// mismo color en el mapa y en este gráfico.
 const VERDE = "#22c55e";
+const AMARILLO = "#eab308";
 const ROJO = "#ef4444";
 const GRIS = "#8ea0c0";
 const AZUL = "#3b82f6";
@@ -24,14 +27,16 @@ const GRILLA = "#223251";
 
 const ESTADO_COLOR: Record<DeviceStatus, string> = {
   normal: VERDE,
-  alerta: ROJO,
-  sin_senal: GRIS,
+  alerta: AMARILLO,
+  sin_senal: ROJO,
+  fuera_de_turno: GRIS,
 };
 
 const ESTADO_LABEL: Record<DeviceStatus, string> = {
   normal: "Normal",
   alerta: "Alerta",
   sin_senal: "Sin señal",
+  fuera_de_turno: "Fuera de turno",
 };
 
 // Alto por fila de barra + aire para los ejes, nunca una altura fija que
@@ -45,6 +50,7 @@ interface FilaArea {
   normal: number;
   alerta: number;
   sin_senal: number;
+  fuera_de_turno: number;
   total: number;
 }
 
@@ -52,7 +58,8 @@ function agruparPorAreaYEstado(devices: Device[]): FilaArea[] {
   const mapa = new Map<string, FilaArea>();
   for (const d of devices) {
     const area = d.areaDetectada ?? d.area ?? d.faena ?? "Sin área";
-    const fila = mapa.get(area) ?? { area, normal: 0, alerta: 0, sin_senal: 0, total: 0 };
+    const fila =
+      mapa.get(area) ?? { area, normal: 0, alerta: 0, sin_senal: 0, fuera_de_turno: 0, total: 0 };
     fila[d.estado] += 1;
     fila.total += 1;
     mapa.set(area, fila);
@@ -170,10 +177,11 @@ export function DashboardCharts({ devices }: { devices: Device[] }) {
             />
             <Bar dataKey="normal" stackId="estado" fill={ESTADO_COLOR.normal} barSize={20} stroke={SUPERFICIE} strokeWidth={2} />
             <Bar dataKey="alerta" stackId="estado" fill={ESTADO_COLOR.alerta} barSize={20} stroke={SUPERFICIE} strokeWidth={2} />
+            <Bar dataKey="sin_senal" stackId="estado" fill={ESTADO_COLOR.sin_senal} barSize={20} stroke={SUPERFICIE} strokeWidth={2} />
             <Bar
-              dataKey="sin_senal"
+              dataKey="fuera_de_turno"
               stackId="estado"
-              fill={ESTADO_COLOR.sin_senal}
+              fill={ESTADO_COLOR.fuera_de_turno}
               barSize={20}
               stroke={SUPERFICIE}
               strokeWidth={2}

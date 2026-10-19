@@ -69,7 +69,7 @@ export function Topbar({
           </button>
 
           {notifAbierta && (
-            <div className="absolute right-0 z-10 mt-2 w-80 rounded-lg border border-border bg-surface-alt shadow-xl">
+            <div className="absolute right-0 z-[1100] mt-2 w-80 rounded-lg border border-border bg-surface-alt shadow-xl">
               <div className="border-b border-border px-4 py-3">
                 <p className="text-sm font-medium">
                   {equiposEnAlerta.length > 0
@@ -113,7 +113,7 @@ export function Topbar({
           </button>
 
           {menuAbierto && (
-            <div className="absolute right-0 z-10 mt-2 w-56 rounded-lg border border-border bg-surface-alt p-3 shadow-xl">
+            <div className="absolute right-0 z-[1100] mt-2 w-56 rounded-lg border border-border bg-surface-alt p-3 shadow-xl">
               <p className="text-sm font-medium">{user.nombre}</p>
               <p className="text-xs text-muted">{ROLE_LABEL[user.role]}</p>
               <button

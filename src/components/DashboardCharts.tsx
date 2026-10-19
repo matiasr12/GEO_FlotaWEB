@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import {
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   PieChart,
   Pie,
   Cell,
@@ -41,12 +43,6 @@ const PALETA_SECTORES = [
   "#f43f5e", // rojo rosado
   "#6366f1", // índigo
 ];
-
-// Alto por fila de barra + aire para los ejes, nunca una altura fija que
-// recorte las etiquetas del eje.
-function altoGrafico(filas: number) {
-  return Math.max(140, filas * 44 + 40);
-}
 
 interface FilaSector {
   sector: string;
@@ -233,29 +229,35 @@ export function DashboardCharts({ devices }: { devices: Device[] }) {
       </TarjetaGrafico>
 
       <TarjetaGrafico titulo="Equipos offline por tiempo sin reportar">
-        <ResponsiveContainer width="100%" height={altoGrafico(offlinePorTiempo.length)}>
-          <BarChart
-            data={offlinePorTiempo}
-            layout="vertical"
-            barCategoryGap={10}
-            margin={{ top: 0, right: 28, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid horizontal={false} stroke={GRILLA} />
-            <XAxis type="number" stroke={GRIS} fontSize={12} allowDecimals={false} />
-            <YAxis
+        <ResponsiveContainer width="100%" height={280}>
+          <AreaChart data={offlinePorTiempo} margin={{ top: 20, right: 16, bottom: 40, left: 0 }}>
+            <CartesianGrid vertical={false} stroke={GRILLA} />
+            <XAxis
               type="category"
               dataKey="bucket"
               stroke={GRIS}
-              fontSize={12}
-              width={110}
+              fontSize={11}
               tickLine={false}
               axisLine={false}
+              angle={-15}
+              textAnchor="end"
+              height={50}
             />
-            <Tooltip content={TooltipSimple} cursor={{ fill: SUPERFICIE }} />
-            <Bar dataKey="cantidad" fill={ROJO} barSize={20} radius={[0, 4, 4, 0]}>
-              <LabelList dataKey="cantidad" position="right" fill={GRIS} fontSize={12} />
-            </Bar>
-          </BarChart>
+            <YAxis type="number" stroke={GRIS} fontSize={12} allowDecimals={false} width={32} />
+            <Tooltip content={TooltipSimple} cursor={{ stroke: GRILLA, strokeWidth: 1 }} />
+            <Area
+              type="monotone"
+              dataKey="cantidad"
+              stroke={ROJO}
+              strokeWidth={2}
+              fill={ROJO}
+              fillOpacity={0.12}
+              dot={{ r: 4, fill: ROJO, stroke: SUPERFICIE, strokeWidth: 2 }}
+              activeDot={{ r: 6 }}
+            >
+              <LabelList dataKey="cantidad" position="top" fill={GRIS} fontSize={12} />
+            </Area>
+          </AreaChart>
         </ResponsiveContainer>
       </TarjetaGrafico>
     </div>

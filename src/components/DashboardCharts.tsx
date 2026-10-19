@@ -23,9 +23,24 @@ import type { Device } from "@/types/device";
 const VERDE = "#22c55e";
 const ROJO = "#ef4444";
 const GRIS = "#8ea0c0";
-const AZUL = "#3b82f6";
 const SUPERFICIE = "#111a2c";
 const GRILLA = "#223251";
+
+// Paleta categórica fija para el gráfico de sectores — un color por sector,
+// en orden fijo (nunca se reasigna si cambia el filtro). Si hay más
+// sectores que colores, se repite desde el inicio.
+const PALETA_SECTORES = [
+  "#3b82f6", // azul
+  "#14b8a6", // teal
+  "#a855f7", // morado
+  "#f59e0b", // ámbar
+  "#ec4899", // rosa
+  "#22c55e", // verde
+  "#f97316", // naranjo
+  "#06b6d4", // cian
+  "#f43f5e", // rojo rosado
+  "#6366f1", // índigo
+];
 
 // Alto por fila de barra + aire para los ejes, nunca una altura fija que
 // recorte las etiquetas del eje.
@@ -158,27 +173,28 @@ export function DashboardCharts({ devices }: { devices: Device[] }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <TarjetaGrafico titulo="Equipos distribuidos por sector">
-        <ResponsiveContainer width="100%" height={altoGrafico(porSector.length)}>
-          <BarChart
-            data={porSector}
-            layout="vertical"
-            barCategoryGap={10}
-            margin={{ top: 0, right: 28, bottom: 0, left: 0 }}
-          >
-            <CartesianGrid horizontal={false} stroke={GRILLA} />
-            <XAxis type="number" stroke={GRIS} fontSize={12} allowDecimals={false} />
-            <YAxis
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={porSector} barCategoryGap={16} margin={{ top: 20, right: 10, bottom: 56, left: 0 }}>
+            <CartesianGrid vertical={false} stroke={GRILLA} />
+            <XAxis
               type="category"
               dataKey="sector"
               stroke={GRIS}
-              fontSize={12}
-              width={110}
+              fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={0}
+              angle={-35}
+              textAnchor="end"
+              height={70}
             />
+            <YAxis type="number" stroke={GRIS} fontSize={12} allowDecimals={false} width={32} />
             <Tooltip content={TooltipSimple} cursor={{ fill: SUPERFICIE }} />
-            <Bar dataKey="cantidad" fill={AZUL} barSize={20} radius={[0, 4, 4, 0]}>
-              <LabelList dataKey="cantidad" position="right" fill={GRIS} fontSize={12} />
+            <Bar dataKey="cantidad" radius={[4, 4, 0, 0]} maxBarSize={48}>
+              <LabelList dataKey="cantidad" position="top" fill={GRIS} fontSize={12} />
+              {porSector.map((fila, i) => (
+                <Cell key={fila.sector} fill={PALETA_SECTORES[i % PALETA_SECTORES.length]} />
+              ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>

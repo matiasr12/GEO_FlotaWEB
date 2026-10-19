@@ -27,7 +27,7 @@ function areaTexto(d: Device) {
 }
 
 function descargarCSV(devices: Device[]) {
-  const encabezados = ["Hostname", "Custodio", "Area", "Estado", "Comentario"];
+  const encabezados = ["Hostname", "Trabajador", "Area", "Estado", "Comentario"];
   const filas = devices.map((d) => [
     d.hostname,
     d.custodioNombre,
@@ -158,7 +158,7 @@ export function DeviceTable({
         <thead>
           <tr className="border-b border-border text-muted">
             <th className="px-5 py-3 font-medium">Hostname</th>
-            <th className="px-5 py-3 font-medium">Custodio</th>
+            <th className="px-5 py-3 font-medium">Trabajador</th>
             <th className="px-5 py-3 font-medium">Área</th>
             <th className="px-5 py-3 font-medium">
               <div className="flex items-center justify-between gap-2">

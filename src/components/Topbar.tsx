@@ -69,7 +69,7 @@ export function Topbar({
         <img
           src="/logo-web.png"
           alt="Caserones — SCM Minera Lumina Copper Chile"
-          className="h-8 w-auto object-contain"
+          className="h-12 w-auto object-contain"
         />
 
         <div className="relative" ref={notifRef}>

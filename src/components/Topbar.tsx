@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Bell, UserCircle2, LogOut, MapPin } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@/types/user";
 import type { Device } from "@/types/device";
 
@@ -35,6 +35,21 @@ export function Topbar({
   const pathname = usePathname();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [notifAbierta, setNotifAbierta] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!notifAbierta && !menuAbierto) return;
+
+    function alHacerClicAfuera(e: MouseEvent) {
+      const objetivo = e.target as Node;
+      if (notifAbierta && !notifRef.current?.contains(objetivo)) setNotifAbierta(false);
+      if (menuAbierto && !menuRef.current?.contains(objetivo)) setMenuAbierto(false);
+    }
+
+    document.addEventListener("mousedown", alHacerClicAfuera);
+    return () => document.removeEventListener("mousedown", alHacerClicAfuera);
+  }, [notifAbierta, menuAbierto]);
 
   async function cerrarSesion() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -57,9 +72,12 @@ export function Topbar({
           className="h-8 w-auto object-contain"
         />
 
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
-            onClick={() => setNotifAbierta((v) => !v)}
+            onClick={() => {
+              setNotifAbierta((v) => !v);
+              setMenuAbierto(false);
+            }}
             className="relative rounded-full p-1 hover:bg-surface-alt"
           >
             <Bell className="h-5 w-5 text-muted" />
@@ -104,9 +122,12 @@ export function Topbar({
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
-            onClick={() => setMenuAbierto((v) => !v)}
+            onClick={() => {
+              setMenuAbierto((v) => !v);
+              setNotifAbierta(false);
+            }}
             className="flex items-center gap-2 rounded-full"
           >
             <UserCircle2 className="h-8 w-8 text-accent" />

@@ -99,13 +99,19 @@ export function Topbar({
               {equiposEnAlerta.length > 0 && (
                 <ul className="max-h-72 overflow-y-auto">
                   {equiposEnAlerta.map((d) => (
-                    <li key={d.id} className="border-b border-border px-4 py-2.5 last:border-0">
-                      <p className="text-sm font-medium">{d.hostname}</p>
-                      <p className="text-xs text-muted">{d.custodioNombre}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-warning">
-                        <MapPin className="h-3 w-3" />
-                        {d.areaDetectada ?? d.area ?? "Fuera del área asignada"}
-                      </p>
+                    <li key={d.id} className="border-b border-border last:border-0">
+                      <Link
+                        href="/alerts"
+                        onClick={() => setNotifAbierta(false)}
+                        className="block px-4 py-2.5 hover:bg-surface"
+                      >
+                        <p className="text-sm font-medium">{d.hostname}</p>
+                        <p className="text-xs text-muted">{d.custodioNombre}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-warning">
+                          <MapPin className="h-3 w-3" />
+                          {d.areaDetectada ?? d.area ?? "Fuera del área asignada"}
+                        </p>
+                      </Link>
                     </li>
                   ))}
                 </ul>

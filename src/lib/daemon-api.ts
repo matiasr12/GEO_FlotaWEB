@@ -63,6 +63,7 @@ function mapEquipoToDevice(e: EquipoApiDTO): Device {
     estado,
     dentroDeArea: !e.alerta,
     turno: e.turno,
+    codigoActivo: e.codigoActivo,
     faena: e.faena,
     area: e.area,
     areaDetectada: e.areaDetectada,

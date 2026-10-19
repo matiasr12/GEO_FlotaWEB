@@ -26,23 +26,43 @@ function areaTexto(d: Device) {
   return d.areaDetectada ?? d.area ?? d.faena ?? "—";
 }
 
-function descargarCSV(devices: Device[]) {
-  const encabezados = ["Hostname", "Trabajador", "Area", "Estado", "Comentario"];
-  const filas = devices.map((d) => [
-    d.hostname,
-    d.custodioNombre,
-    areaTexto(d),
-    ESTADO_LABEL[d.estado],
-    d.comentario ?? "",
-  ]);
-  const escapar = (valor: string) => `"${valor.replace(/"/g, '""')}"`;
-  const csv = [encabezados, ...filas].map((fila) => fila.map(escapar).join(",")).join("\r\n");
+async function descargarExcel(devices: Device[]) {
+  // Import perezoso: exceljs es pesado, no tiene por qué ir en el bundle
+  // inicial de la tabla — solo se carga cuando alguien realmente exporta.
+  const ExcelJS = (await import("exceljs")).default;
 
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const libro = new ExcelJS.Workbook();
+  const hoja = libro.addWorksheet("Equipos");
+
+  hoja.columns = [
+    { header: "Hostname", key: "hostname", width: 22 },
+    { header: "Trabajador", key: "trabajador", width: 28 },
+    { header: "Área", key: "area", width: 24 },
+    { header: "Faena", key: "faena", width: 18 },
+    { header: "Código de activo", key: "codigoActivo", width: 18 },
+    { header: "Turno", key: "turno", width: 16 },
+  ];
+  hoja.getRow(1).font = { bold: true };
+
+  for (const d of devices) {
+    hoja.addRow({
+      hostname: d.hostname,
+      trabajador: d.custodioNombre,
+      area: areaTexto(d),
+      faena: d.faena ?? "",
+      codigoActivo: d.codigoActivo ?? "",
+      turno: d.turno ?? "",
+    });
+  }
+
+  const buffer = await libro.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;
-  enlace.download = `equipos_${new Date().toISOString().slice(0, 10)}.csv`;
+  enlace.download = `equipos_${new Date().toISOString().slice(0, 10)}.xlsx`;
   enlace.click();
   URL.revokeObjectURL(url);
 }
@@ -174,7 +194,7 @@ export function DeviceTable({
                   </button>
                 </span>
                 <button
-                  onClick={() => descargarCSV(filtrados)}
+                  onClick={() => descargarExcel(filtrados)}
                   title="Descargar en Excel"
                   className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-normal text-muted hover:bg-surface-alt hover:text-foreground"
                 >

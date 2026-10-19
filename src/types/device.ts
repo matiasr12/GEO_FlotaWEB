@@ -18,6 +18,7 @@ export interface Device {
   turno?: string | null;
   // Campos reales del backend (GET /api/equipos), no todos tienen
   // equivalente en la maqueta original — se muestran cuando existen.
+  codigoActivo?: string | null;
   faena?: string | null;
   area?: string | null;
   areaDetectada?: string | null;

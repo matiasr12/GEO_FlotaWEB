@@ -23,6 +23,7 @@ import type { Device } from "@/types/device";
 // Mismos colores que MapView.tsx/StatusBadge.tsx a propósito — un equipo
 // debe leerse igual en todo el panel.
 const VERDE = "#22c55e";
+const AMARILLO = "#eab308";
 const ROJO = "#ef4444";
 const GRIS = "#8ea0c0";
 const SUPERFICIE = "#111a2c";
@@ -74,6 +75,20 @@ function calcularActivosDesactivados(devices: Device[]) {
     { nombre: "Activos", cantidad: activos, color: VERDE },
     { nombre: "Desactivados", cantidad: desactivados, color: GRIS },
   ];
+}
+
+// Mismos sectores que agruparPorSector, pero solo contando equipos en
+// alerta — para ver si los problemas se concentran en un área puntual.
+function agruparAlertasPorSector(devices: Device[]): FilaSector[] {
+  const mapa = new Map<string, number>();
+  for (const d of devices) {
+    const sector = d.areaDetectada ?? d.area ?? d.faena ?? "Sin sector";
+    if (!mapa.has(sector)) mapa.set(sector, 0);
+    if (d.estado === "alerta") mapa.set(sector, (mapa.get(sector) ?? 0) + 1);
+  }
+  return Array.from(mapa, ([sector, cantidad]) => ({ sector, cantidad })).sort(
+    (a, b) => b.cantidad - a.cantidad
+  );
 }
 
 const BUCKETS_OFFLINE = [
@@ -150,6 +165,7 @@ function TarjetaGrafico({ titulo, children }: { titulo: string; children: React.
 
 export function DashboardCharts({ devices }: { devices: Device[] }) {
   const porSector = useMemo(() => agruparPorSector(devices), [devices]);
+  const alertasPorSector = useMemo(() => agruparAlertasPorSector(devices), [devices]);
   const activosDesactivados = useMemo(() => calcularActivosDesactivados(devices), [devices]);
   const offlinePorTiempo = useMemo(() => agruparOfflinePorTiempo(devices), [devices]);
   const totalActivosDesactivados = activosDesactivados.reduce((acc, f) => acc + f.cantidad, 0);
@@ -258,6 +274,35 @@ export function DashboardCharts({ devices }: { devices: Device[] }) {
               <LabelList dataKey="cantidad" position="top" fill={GRIS} fontSize={12} />
             </Area>
           </AreaChart>
+        </ResponsiveContainer>
+      </TarjetaGrafico>
+
+      <TarjetaGrafico titulo="Equipos en alerta por sector">
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart
+            data={alertasPorSector}
+            barCategoryGap={16}
+            margin={{ top: 20, right: 10, bottom: 56, left: 0 }}
+          >
+            <CartesianGrid vertical={false} stroke={GRILLA} />
+            <XAxis
+              type="category"
+              dataKey="sector"
+              stroke={GRIS}
+              fontSize={11}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+              angle={-35}
+              textAnchor="end"
+              height={70}
+            />
+            <YAxis type="number" stroke={GRIS} fontSize={12} allowDecimals={false} width={32} />
+            <Tooltip content={TooltipSimple} cursor={{ fill: SUPERFICIE }} />
+            <Bar dataKey="cantidad" fill={AMARILLO} radius={[4, 4, 0, 0]} maxBarSize={48}>
+              <LabelList dataKey="cantidad" position="top" fill={GRIS} fontSize={12} />
+            </Bar>
+          </BarChart>
         </ResponsiveContainer>
       </TarjetaGrafico>
     </div>

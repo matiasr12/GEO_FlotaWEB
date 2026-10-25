@@ -83,6 +83,13 @@ async function fetchDaemonAPI<T>(path: string, init?: RequestInit): Promise<T> {
       ...(init?.headers ?? {}),
     },
     cache: "no-store",
+    // Sin esto, un fetch que reutiliza una conexión TCP muerta (ej. el
+    // servidor estuvo unos minutos sin tráfico y algún NAT/balanceador de
+    // por medio la cortó en silencio) se queda colgado indefinidamente —
+    // la página "no hace nada" al navegar porque está esperando una
+    // respuesta que nunca va a llegar. Con esto falla rápido en vez de
+    // colgarse para siempre.
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {

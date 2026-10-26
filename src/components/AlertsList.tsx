@@ -25,6 +25,7 @@ export function AlertsList({
   puedeGestionar: boolean;
 }) {
   const [alertas, setAlertas] = useState(alertasIniciales);
+  const [filtro, setFiltro] = useState<EstadoAlerta | "todas">("todas");
 
   async function reconocer(id: number, comentario: string) {
     const res = await fetch(`/api/alerts/${id}/acknowledge`, {
@@ -55,17 +56,52 @@ export function AlertsList({
     );
   }
 
+  const visibles = filtro === "todas" ? alertas : alertas.filter((a) => a.estado === filtro);
+  const opciones: { valor: EstadoAlerta | "todas"; label: string; activo: string }[] = [
+    { valor: "todas", label: "Todas", activo: "bg-accent/15 text-accent border-accent/40" },
+    { valor: "abierta", label: "Abiertas", activo: `${ESTADO_CONFIG.abierta.className} border-danger/40` },
+    { valor: "revisada", label: "Revisadas", activo: `${ESTADO_CONFIG.revisada.className} border-warning/40` },
+    { valor: "cerrada", label: "Cerradas", activo: `${ESTADO_CONFIG.cerrada.className} border-muted/40` },
+  ];
+
   return (
     <div className="flex flex-col gap-3">
-      {alertas.map((a) => (
-        <AlertCard
-          key={a.id}
-          alerta={a}
-          puedeGestionar={puedeGestionar}
-          onReconocer={reconocer}
-          onComentar={comentar}
-        />
-      ))}
+      <div role="group" aria-label="Filtrar por estado" className="flex flex-wrap gap-2">
+        {opciones.map((o) => {
+          const cantidad =
+            o.valor === "todas" ? alertas.length : alertas.filter((a) => a.estado === o.valor).length;
+          const seleccionado = filtro === o.valor;
+          return (
+            <button
+              key={o.valor}
+              type="button"
+              aria-pressed={seleccionado}
+              onClick={() => setFiltro(o.valor)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                seleccionado ? o.activo : "border-border text-muted hover:text-foreground"
+              }`}
+            >
+              {o.label} <span className="opacity-70">({cantidad})</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {visibles.length === 0 ? (
+        <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted">
+          No hay alertas con este estado.
+        </div>
+      ) : (
+        visibles.map((a) => (
+          <AlertCard
+            key={a.id}
+            alerta={a}
+            puedeGestionar={puedeGestionar}
+            onReconocer={reconocer}
+            onComentar={comentar}
+          />
+        ))
+      )}
     </div>
   );
 }

@@ -5,6 +5,13 @@ const envSchema = z.object({
   DAEMON_API_TOKEN: z.string().min(1),
   SESSION_SECRET: z.string().min(32),
   SESSION_INACTIVITY_MINUTES: z.coerce.number().default(15),
+  // Secreta — se verifica server-side contra la API de Cloudflare.
+  TURNSTILE_SECRET_KEY: z.string().min(1),
+  // Pública (el widget la necesita en el navegador), pero se lee en
+  // runtime y se le pasa al formulario como prop, en vez de usar
+  // NEXT_PUBLIC_*: esas se incrustan en el build de GitHub Actions, donde
+  // no existen las App Settings de Azure.
+  TURNSTILE_SITE_KEY: z.string().min(1),
   AZURE_SQL_SERVER: z.string().min(1).optional(),
   AZURE_SQL_DATABASE: z.string().min(1).optional(),
   AZURE_SQL_USER: z.string().min(1).optional(),
@@ -34,6 +41,8 @@ export function getEnv(): Env {
       DAEMON_API_TOKEN: process.env.DAEMON_API_TOKEN,
       SESSION_SECRET: process.env.SESSION_SECRET,
       SESSION_INACTIVITY_MINUTES: process.env.SESSION_INACTIVITY_MINUTES,
+      TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
+      TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY,
       AZURE_SQL_SERVER: process.env.AZURE_SQL_SERVER,
       AZURE_SQL_DATABASE: process.env.AZURE_SQL_DATABASE,
       AZURE_SQL_USER: process.env.AZURE_SQL_USER,

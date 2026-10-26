@@ -2,6 +2,7 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { getEnv } from "@/lib/env";
+import { obtenerUsuarioVigente } from "@/lib/auth/users";
 import type { SessionUser } from "@/types/user";
 
 const COOKIE_NAME = "geoflota_session";
@@ -44,10 +45,19 @@ export async function obtenerSesion(): Promise<SessionUser | null> {
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
 
+  let sesion: SessionUser;
   try {
     const { payload } = await jwtVerify(token, getSecret());
-    return payload as unknown as SessionUser;
+    sesion = payload as unknown as SessionUser;
   } catch {
+    return null;
+  }
+
+  // Rol y estado actuales desde la DB, no los que quedaron en el token.
+  try {
+    return await obtenerUsuarioVigente(sesion);
+  } catch (err) {
+    console.error("[session] no se pudo verificar el usuario en la DB:", err);
     return null;
   }
 }

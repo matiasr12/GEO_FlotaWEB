@@ -1,7 +1,21 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { DataSubjectRequest, TipoSolicitud } from "@/lib/data-subject-requests";
+
+// Trabajador con computador asignado.
+export interface PersonaTitular {
+  clave: string;
+  nombre: string;
+  detalle: string; // RUT · área · equipo
+}
+
+const MAX_SUGERENCIAS = 8;
+
+// Sin tildes ni mayúsculas: "jose" encuentra a "José".
+function normalizar(texto: string) {
+  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+}
 
 const TIPOS: { value: TipoSolicitud; label: string }[] = [
   { value: "acceso", label: "Acceso a sus datos" },
@@ -12,8 +26,10 @@ const TIPOS: { value: TipoSolicitud; label: string }[] = [
 
 export function DataRequestForm({
   solicitudesIniciales,
+  personas,
 }: {
   solicitudesIniciales: DataSubjectRequest[];
+  personas: PersonaTitular[];
 }) {
   const [solicitudes, setSolicitudes] = useState(solicitudesIniciales);
   const [nombre, setNombre] = useState("");
@@ -21,6 +37,38 @@ export function DataRequestForm({
   const [tipo, setTipo] = useState<TipoSolicitud>("acceso");
   const [detalle, setDetalle] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [abierto, setAbierto] = useState(false);
+  const [resaltado, setResaltado] = useState(0);
+
+  // Busca por nombre, RUT, área o equipo.
+  const sugerencias = useMemo(() => {
+    const q = normalizar(nombre.trim());
+    if (!q) return [];
+    return personas
+      .filter((p) => normalizar(`${p.nombre} ${p.detalle}`).includes(q))
+      .slice(0, MAX_SUGERENCIAS);
+  }, [nombre, personas]);
+
+  function elegir(p: PersonaTitular) {
+    setNombre(p.nombre);
+    setAbierto(false);
+  }
+
+  function onKeyDownNombre(e: KeyboardEvent<HTMLInputElement>) {
+    if (!abierto || sugerencias.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setResaltado((i) => (i + 1) % sugerencias.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setResaltado((i) => (i - 1 + sugerencias.length) % sugerencias.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      elegir(sugerencias[resaltado]);
+    } else if (e.key === "Escape") {
+      setAbierto(false);
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -53,13 +101,54 @@ export function DataRequestForm({
       <form onSubmit={onSubmit} className="rounded-xl border border-border bg-surface p-5">
         <h2 className="mb-4 font-medium">Registrar solicitud</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <input
-            required
-            placeholder="Nombre del titular"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm outline-none focus:border-accent"
-          />
+          <div className="relative">
+            <input
+              required
+              placeholder="Nombre del titular (busca por nombre o RUT)"
+              value={nombre}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={abierto && sugerencias.length > 0}
+              aria-controls="sugerencias-titular"
+              onChange={(e) => {
+                setNombre(e.target.value);
+                setAbierto(true);
+                setResaltado(0);
+              }}
+              onFocus={() => setAbierto(true)}
+              onBlur={() => setAbierto(false)}
+              onKeyDown={onKeyDownNombre}
+              className="w-full rounded-lg border border-border bg-surface-alt px-3 py-2 text-sm outline-none focus:border-accent"
+            />
+            {abierto && sugerencias.length > 0 && (
+              <ul
+                id="sugerencias-titular"
+                role="listbox"
+                className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-surface shadow-xl"
+              >
+                {sugerencias.map((p, i) => (
+                  <li
+                    key={p.clave}
+                    role="option"
+                    aria-selected={i === resaltado}
+                    // mousedown en vez de click: el click llega después del
+                    // blur del input, que ya cerró la lista.
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      elegir(p);
+                    }}
+                    onMouseEnter={() => setResaltado(i)}
+                    className={`cursor-pointer px-3 py-2 text-sm ${
+                      i === resaltado ? "bg-accent/15" : ""
+                    }`}
+                  >
+                    <span className="block">{p.nombre}</span>
+                    <span className="block truncate text-xs text-muted">{p.detalle}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <input
             required
             type="email"

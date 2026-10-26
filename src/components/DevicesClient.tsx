@@ -8,9 +8,11 @@ import { DeviceFormModal } from "./DeviceFormModal";
 
 export function DevicesClient({
   devicesIniciales,
+  areas,
   puedeEditar,
 }: {
   devicesIniciales: Device[];
+  areas: string[];
   puedeEditar: boolean;
 }) {
   const [devices, setDevices] = useState(devicesIniciales);
@@ -49,6 +51,7 @@ export function DevicesClient({
 
       <DeviceTable
         devices={devices}
+        areas={areas}
         pageSize={10}
         puedeComentar={puedeEditar}
         onEdit={

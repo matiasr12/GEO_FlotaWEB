@@ -10,12 +10,14 @@ import { DashboardCharts } from "./DashboardCharts";
 
 export function DashboardClient({
   devices,
+  areas,
   ordenados,
   activos,
   alertas,
   puedeComentar,
 }: {
   devices: Device[];
+  areas: string[];
   ordenados: Device[];
   activos: number;
   alertas: number;
@@ -48,6 +50,7 @@ export function DashboardClient({
 
       <DeviceTable
         devices={ordenados}
+        areas={areas}
         pageSize={4}
         puedeComentar={puedeComentar}
         onFiltrados={setFiltrados}

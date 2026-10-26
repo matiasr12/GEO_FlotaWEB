@@ -3,11 +3,16 @@ import { listarEquipos } from "@/lib/daemon-api";
 import { registrarAuditoria } from "@/lib/audit";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { obtenerComentarios } from "@/lib/device-comments";
+import { listarAreas } from "@/lib/areas";
 import { DashboardClient } from "@/components/DashboardClient";
 
 export default async function DashboardPage() {
   const user = await obtenerSesion();
-  const [devicesRaw, comentarios] = await Promise.all([listarEquipos(), obtenerComentarios()]);
+  const [devicesRaw, comentarios, areas] = await Promise.all([
+    listarEquipos(),
+    obtenerComentarios(),
+    listarAreas(),
+  ]);
   const devices = devicesRaw.map((d) => ({ ...d, comentario: comentarios[d.id] ?? null }));
 
   if (user) {
@@ -23,6 +28,7 @@ export default async function DashboardPage() {
   return (
     <DashboardClient
       devices={devices}
+      areas={areas}
       ordenados={ordenados}
       activos={activos}
       alertas={alertas}

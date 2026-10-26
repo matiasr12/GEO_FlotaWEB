@@ -177,7 +177,13 @@ function areaTexto(d: Device) {
   return d.areaDetectada ?? d.area ?? d.faena ?? "—";
 }
 
-async function descargarExcel(devices: Device[]) {
+// "Fuera de turno" + "Dormitorios" → "fuera-de-turno_dormitorios", para que
+// el nombre del archivo diga qué filtros se usaron.
+function parteNombreArchivo(texto: string) {
+  return normalizar(texto).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+async function descargarExcel(devices: Device[], filtros: string[]) {
   // Import perezoso: exceljs es pesado, no tiene por qué ir en el bundle
   // inicial de la tabla — solo se carga cuando alguien realmente exporta.
   const ExcelJS = (await import("exceljs")).default;
@@ -189,6 +195,7 @@ async function descargarExcel(devices: Device[]) {
     { header: "Hostname", key: "hostname", width: 22 },
     { header: "Trabajador", key: "trabajador", width: 28 },
     { header: "Área", key: "area", width: 24 },
+    { header: "Estado", key: "estado", width: 16 },
     { header: "Faena", key: "faena", width: 18 },
     { header: "Código de activo", key: "codigoActivo", width: 18 },
     { header: "Turno", key: "turno", width: 16 },
@@ -200,6 +207,7 @@ async function descargarExcel(devices: Device[]) {
       hostname: d.hostname,
       trabajador: d.custodioNombre,
       area: areaTexto(d),
+      estado: ESTADO_LABEL[d.estado],
       faena: d.faena ?? "",
       codigoActivo: d.codigoActivo ?? "",
       turno: d.turno ?? "",
@@ -213,7 +221,8 @@ async function descargarExcel(devices: Device[]) {
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;
-  enlace.download = `equipos_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const sufijo = filtros.map(parteNombreArchivo).filter(Boolean).join("_");
+  enlace.download = `equipos_${sufijo ? `${sufijo}_` : ""}${new Date().toISOString().slice(0, 10)}.xlsx`;
   enlace.click();
   URL.revokeObjectURL(url);
 }
@@ -261,14 +270,18 @@ function ComentarioCell({ device, editable }: { device: Device; editable: boolea
   );
 }
 
+const SIN_AREAS: string[] = [];
+
 export function DeviceTable({
   devices,
+  areas = SIN_AREAS,
   pageSize = 4,
   onEdit,
   puedeComentar = false,
   onFiltrados,
 }: {
   devices: Device[];
+  areas?: string[];
   pageSize?: number;
   onEdit?: (device: Device) => void;
   puedeComentar?: boolean;
@@ -295,10 +308,12 @@ export function DeviceTable({
     };
   }
 
+  // Todas las áreas registradas (dbo.Areas) más las que traen los equipos,
+  // por si alguna solo viene del backend.
   const areasDisponibles = useMemo(() => {
-    const set = new Set(devices.map((d) => areaTexto(d)).filter((a) => a !== "—"));
+    const set = new Set([...areas, ...devices.map((d) => areaTexto(d)).filter((a) => a !== "—")]);
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
-  }, [devices]);
+  }, [areas, devices]);
 
   const hostnamesDisponibles = useMemo(
     () => Array.from(new Set(devices.map((d) => d.hostname))).sort((a, b) => a.localeCompare(b, "es")),
@@ -413,8 +428,15 @@ export function DeviceTable({
               Actualizar
             </button>
             <button
-              onClick={() => descargarExcel(filtrados)}
-              title="Descargar en Excel"
+              onClick={() =>
+                descargarExcel(filtrados, [
+                  filtroEstado ? ESTADO_LABEL[filtroEstado] : "",
+                  filtroArea,
+                  filtroCustodio,
+                  filtroHostname,
+                ])
+              }
+              title={hayFiltros ? "Descargar en Excel los equipos filtrados" : "Descargar en Excel todos los equipos"}
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs text-muted hover:bg-surface-alt hover:text-foreground"
             >
               <Download className="h-3.5 w-3.5" />

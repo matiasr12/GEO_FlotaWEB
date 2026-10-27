@@ -57,8 +57,11 @@ export async function obtenerSesion(): Promise<SessionUser | null> {
   try {
     return await obtenerUsuarioVigente(sesion);
   } catch (err) {
+    // La DB no respondió (ej. Azure SQL despertando de la pausa): se usa
+    // la sesión firmada en vez de echar al usuario al login. La revocación
+    // vuelve a aplicarse en cuanto la DB responda (no se guarda en caché).
     console.error("[session] no se pudo verificar el usuario en la DB:", err);
-    return null;
+    return sesion;
   }
 }
 

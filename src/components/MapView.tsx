@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, LayersControl, CircleMarker, Circle, Popup, Tooltip, useMap } from "react-leaflet";
 import type { CircleMarker as LeafletCircleMarker } from "leaflet";
 import type { Device } from "@/types/device";
@@ -31,8 +31,22 @@ function EnfocarEquipo({
     const ubicacion = devices.find((d) => d.id === enfocado.id)?.ubicacion;
     if (!ubicacion) return;
 
+    // Cerrar el popup anterior antes de volar: si queda abierto, Leaflet
+    // intenta reacomodarlo a mitad de la animación.
+    map.closePopup();
+    map.stop();
+
+    const abrirPopup = () => {
+      const marcador = marcadores.current.get(enfocado.id);
+      // El marcador pudo desaparecer durante el vuelo (filtro, refresco).
+      if (marcador && map.hasLayer(marcador)) marcador.openPopup();
+    };
+    map.once("moveend", abrirPopup);
     map.flyTo([ubicacion.lat, ubicacion.lng], ZOOM_EQUIPO, { duration: 1.2 });
-    map.once("moveend", () => marcadores.current.get(enfocado.id)?.openPopup());
+
+    return () => {
+      map.off("moveend", abrirPopup);
+    };
     // devices queda fuera a propósito: solo se enfoca al hacer clic, no
     // cada vez que se refresca la lista de equipos.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,6 +104,10 @@ export function MapView({
   enfocado?: EquipoEnfocado;
 }) {
   const marcadores = useRef(new Map<string, LeafletCircleMarker>());
+  const registrarMarcador = useCallback((id: string, m: LeafletCircleMarker | null) => {
+    if (m) marcadores.current.set(id, m);
+    else marcadores.current.delete(id);
+  }, []);
 
   // Nunca se dibuja un marcador para un equipo sin latitud/longitud real
   // — no hay forma honesta de "inventar" dónde está.
@@ -123,68 +141,85 @@ export function MapView({
 
         <EnfocarEquipo enfocado={enfocado} devices={conUbicacion} marcadores={marcadores} />
 
-        {conUbicacion.map((d) => {
-          // Sin señal (sin lectura reciente del daemon) = rojo, siempre —
-          // esa posición ya no es confiable, aunque haya sido "dentro del
-          // área" la última vez. Alerta (fuera de la geocerca, pero con
-          // señal activa) = amarillo. Fuera de turno (sin señal, pero el
-          // custodio no debería estar reportando) = gris, para no
-          // confundirlo con una desconexión real.
-          const color =
-            d.estado === "sin_senal"
-              ? ROJO
-              : d.estado === "fuera_de_turno"
-                ? GRIS
-                : d.estado === "alerta"
-                  ? AMARILLO
-                  : VERDE;
-          const { lat, lng, precisionMetros, capturedAt } = d.ubicacion!;
-
-          return (
-            <React.Fragment key={d.id}>
-              {precisionMetros != null && (
-                <Circle
-                  center={[lat, lng]}
-                  radius={Math.min(precisionMetros, RADIO_PRECISION_MAX_METROS)}
-                  pathOptions={{
-                    color,
-                    fillColor: color,
-                    fillOpacity: 0.12,
-                    weight: 1,
-                  }}
-                />
-              )}
-              <CircleMarker
-                ref={(m) => {
-                  if (m) marcadores.current.set(d.id, m);
-                  else marcadores.current.delete(d.id);
-                }}
-                center={[lat, lng]}
-                radius={d.dentroDeArea ? 8 : 12}
-                pathOptions={{
-                  color,
-                  fillColor: color,
-                  fillOpacity: 0.55,
-                  weight: 2,
-                }}
-              >
-                <Tooltip direction="top" offset={[0, -6]}>
-                  {d.hostname}
-                </Tooltip>
-                <Popup>
-                  <div className="text-sm">
-                    <p className="font-semibold">{d.hostname}</p>
-                    <p>{d.custodioNombre}</p>
-                    <p>Área: {d.area ?? "—"}</p>
-                    <p>Faena: {d.faena ?? "—"}</p>
-                    <p className="text-xs text-muted">{formatearFecha(capturedAt)}</p>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            </React.Fragment>
-          );
-        })}
+        {conUbicacion.map((d) => (
+          <MarcadorEquipo key={d.id} device={d} registrar={registrarMarcador} />
+        ))}
       </MapContainer>
     </div>
   );
 }
+
+// Memoizado a propósito: react-leaflet compara `center` por referencia y,
+// si recibe un array nuevo en cada render, llama setLatLng y Leaflet
+// reacomoda el popup abierto. Durante el flyTo de EnfocarEquipo eso
+// rompía la página ("Cannot read properties of null (reading
+// 'layerPointToContainerPoint')"). Así el marcador solo se actualiza si
+// el equipo cambia de verdad.
+const MarcadorEquipo = React.memo(function MarcadorEquipo({
+  device: d,
+  registrar,
+}: {
+  device: Device;
+  registrar: (id: string, marcador: LeafletCircleMarker | null) => void;
+}) {
+  const { lat, lng, precisionMetros, capturedAt } = d.ubicacion!;
+  const centro = useMemo<[number, number]>(() => [lat, lng], [lat, lng]);
+
+  // Sin señal (sin lectura reciente del daemon) = rojo, siempre — esa
+  // posición ya no es confiable, aunque haya sido "dentro del área" la
+  // última vez. Alerta (fuera de la geocerca, pero con señal activa) =
+  // amarillo. Fuera de turno (sin señal, pero el custodio no debería
+  // estar reportando) = gris, para no confundirlo con una desconexión real.
+  const color =
+    d.estado === "sin_senal"
+      ? ROJO
+      : d.estado === "fuera_de_turno"
+        ? GRIS
+        : d.estado === "alerta"
+          ? AMARILLO
+          : VERDE;
+
+  const estiloPrecision = useMemo(
+    () => ({ color, fillColor: color, fillOpacity: 0.12, weight: 1 }),
+    [color]
+  );
+  const estiloMarcador = useMemo(
+    () => ({ color, fillColor: color, fillOpacity: 0.55, weight: 2 }),
+    [color]
+  );
+  const ref = useCallback(
+    (m: LeafletCircleMarker | null) => registrar(d.id, m),
+    [registrar, d.id]
+  );
+
+  return (
+    <>
+      {precisionMetros != null && (
+        <Circle
+          center={centro}
+          radius={Math.min(precisionMetros, RADIO_PRECISION_MAX_METROS)}
+          pathOptions={estiloPrecision}
+        />
+      )}
+      <CircleMarker
+        ref={ref}
+        center={centro}
+        radius={d.dentroDeArea ? 8 : 12}
+        pathOptions={estiloMarcador}
+      >
+        <Tooltip direction="top" offset={[0, -6]}>
+          {d.hostname}
+        </Tooltip>
+        <Popup>
+          <div className="text-sm">
+            <p className="font-semibold">{d.hostname}</p>
+            <p>{d.custodioNombre}</p>
+            <p>Área: {d.area ?? "—"}</p>
+            <p>Faena: {d.faena ?? "—"}</p>
+            <p className="text-xs text-muted">{formatearFecha(capturedAt)}</p>
+          </div>
+        </Popup>
+      </CircleMarker>
+    </>
+  );
+});

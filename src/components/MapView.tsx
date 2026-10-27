@@ -61,7 +61,7 @@ export function MapView({
         center={centroMapa}
         zoom={zoom}
         scrollWheelZoom
-        style={{ height: "100%", width: "100%", background: "#0b1220" }}
+        style={{ height: "100%", width: "100%", background: "var(--background)" }}
       >
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Satélite">

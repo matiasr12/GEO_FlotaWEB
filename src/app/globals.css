@@ -12,6 +12,23 @@
   --danger: #ef4444;
   --warning: #eab308;
   --success: #22c55e;
+  color-scheme: dark;
+}
+
+/* Modo claro: lo activa el botón sol/luna del Topbar (data-theme en
+   <html>, ver ThemeToggle.tsx). Mismos tokens, otros valores. */
+:root[data-theme="light"] {
+  --background: #f3f6fb;
+  --surface: #ffffff;
+  --surface-alt: #eef2f8;
+  --border: #d5deeb;
+  --foreground: #0f172a;
+  --muted: #5b6b85;
+  --accent: #2563eb;
+  --danger: #dc2626;
+  --warning: #b45309;
+  --success: #16a34a;
+  color-scheme: light;
 }
 
 @theme inline {

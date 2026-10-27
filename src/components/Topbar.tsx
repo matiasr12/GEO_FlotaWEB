@@ -6,6 +6,7 @@ import { Bell, UserCircle2, LogOut, MapPin } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@/types/user";
 import type { Device } from "@/types/device";
+import { ThemeToggle } from "./ThemeToggle";
 
 const ROLE_LABEL: Record<SessionUser["role"], string> = {
   admin: "Administrador",
@@ -71,6 +72,8 @@ export function Topbar({
           alt="Caserones — SCM Minera Lumina Copper Chile"
           className="h-12 w-auto object-contain"
         />
+
+        <ThemeToggle />
 
         <div className="relative" ref={notifRef}>
           <button

@@ -26,8 +26,9 @@ const VERDE = "#22c55e";
 const AMARILLO = "#eab308";
 const ROJO = "#ef4444";
 const GRIS = "#8ea0c0";
-const SUPERFICIE = "#111a2c";
-const GRILLA = "#223251";
+// Variables del tema (globals.css) para que sigan al modo claro/oscuro.
+const SUPERFICIE = "var(--surface)";
+const GRILLA = "var(--border)";
 
 // Paleta categórica fija para el gráfico de sectores — un color por sector,
 // en orden fijo (nunca se reasigna si cambia el filtro). Si hay más
@@ -125,7 +126,7 @@ function CajaTooltip({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="rounded-lg border px-3 py-2 text-xs shadow-xl"
-      style={{ background: "#16213a", borderColor: GRILLA }}
+      style={{ background: "var(--surface-alt)", borderColor: GRILLA }}
     >
       {children}
     </div>

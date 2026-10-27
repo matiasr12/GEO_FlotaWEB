@@ -51,7 +51,8 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
     if (!window.turnstile || !widgetRef.current || widgetId.current) return;
     widgetId.current = window.turnstile.render(widgetRef.current, {
       sitekey: turnstileSiteKey,
-      theme: "auto",
+      // Mismo tema que eligió el usuario en el panel (ver lib/tema.ts).
+      theme: document.documentElement.dataset.theme === "light" ? "light" : "dark",
       callback: (token) => setTurnstileToken(token),
       "expired-callback": () => setTurnstileToken(null),
       "error-callback": () => setTurnstileToken(null),

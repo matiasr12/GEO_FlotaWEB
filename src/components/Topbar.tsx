@@ -82,7 +82,14 @@ export function Topbar({
         <img
           src="/logo-web.png"
           alt="Caserones — SCM Minera Lumina Copper Chile"
-          className="hidden h-12 w-auto object-contain sm:block"
+          className="logo-oscuro hidden h-12 w-auto object-contain sm:block"
+        />
+        {/* Misma imagen con la palabra CASERONES en oscuro: la original es
+            blanca y desaparece sobre el fondo del modo claro. */}
+        <img
+          src="/logo-web-claro.png"
+          alt="Caserones — SCM Minera Lumina Copper Chile"
+          className="logo-claro hidden h-12 w-auto object-contain sm:block"
         />
 
         <ThemeToggle />

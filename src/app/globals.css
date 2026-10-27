@@ -18,12 +18,14 @@
 /* Modo claro: lo activa el botón sol/luna del Topbar (data-theme en
    <html>, ver ThemeToggle.tsx). Mismos tokens, otros valores. */
 :root[data-theme="light"] {
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --surface-alt: #f1f5f9;
-  --border: #e2e8f0;
+  /* Celeste suave, de la misma familia que el azul del modo oscuro: el
+     fondo es celeste claro y las tarjetas casi blancas con un tinte azul. */
+  --background: #e8f1fb;
+  --surface: #f7fbff;
+  --surface-alt: #e3eefa;
+  --border: #c9dcf1;
   --foreground: #0f172a;
-  --muted: #64748b;
+  --muted: #52688a;
   --accent: #2563eb;
   --danger: #dc2626;
   --warning: #b45309;
@@ -36,7 +38,14 @@
 /* En modo claro las tarjetas blancas sobre fondo casi blanco necesitan
    una sombra suave para separarse. */
 :root[data-theme="light"] .bg-surface {
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  box-shadow: 0 1px 2px rgb(30 64 175 / 0.05), 0 2px 6px rgb(30 64 175 / 0.06);
+}
+
+/* Logo: versión con letras blancas en modo oscuro, oscuras en modo claro
+   (ver Topbar.tsx). */
+:root[data-theme="light"] .logo-oscuro,
+:root:not([data-theme="light"]) .logo-claro {
+  display: none;
 }
 
 @theme inline {

@@ -27,6 +27,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
+        {/* El panel ya trae modo claro y oscuro propios: que el navegador
+            (modo oscuro automático de Chrome/Edge) y extensiones como
+            Dark Reader no le cambien los colores. */}
+        <meta name="color-scheme" content="dark light" />
+        <meta name="darkreader-lock" />
         <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">

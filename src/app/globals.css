@@ -28,7 +28,9 @@
   --danger: #dc2626;
   --warning: #b45309;
   --success: #16a34a;
-  color-scheme: light;
+  /* "only": impide que el modo oscuro automático de Chrome/Edge invierta
+     el modo claro y lo deje negro cuando Windows está en modo oscuro. */
+  color-scheme: only light;
 }
 
 /* En modo claro las tarjetas blancas sobre fondo casi blanco necesitan

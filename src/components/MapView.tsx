@@ -1,8 +1,45 @@
 "use client";
 
-import React from "react";
-import { MapContainer, TileLayer, LayersControl, CircleMarker, Circle, Popup, Tooltip } from "react-leaflet";
+import React, { useEffect, useRef } from "react";
+import { MapContainer, TileLayer, LayersControl, CircleMarker, Circle, Popup, Tooltip, useMap } from "react-leaflet";
+import type { CircleMarker as LeafletCircleMarker } from "leaflet";
 import type { Device } from "@/types/device";
+
+// Equipo a enfocar. `vez` cambia en cada clic para poder volver a enfocar
+// el mismo equipo después de mover el mapa a mano.
+export interface EquipoEnfocado {
+  id: string;
+  vez: number;
+}
+
+const ZOOM_EQUIPO = 18;
+
+// Vuela hasta el equipo elegido en la tabla y abre su popup.
+function EnfocarEquipo({
+  enfocado,
+  devices,
+  marcadores,
+}: {
+  enfocado?: EquipoEnfocado;
+  devices: Device[];
+  marcadores: React.RefObject<Map<string, LeafletCircleMarker>>;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enfocado) return;
+    const ubicacion = devices.find((d) => d.id === enfocado.id)?.ubicacion;
+    if (!ubicacion) return;
+
+    map.flyTo([ubicacion.lat, ubicacion.lng], ZOOM_EQUIPO, { duration: 1.2 });
+    map.once("moveend", () => marcadores.current.get(enfocado.id)?.openPopup());
+    // devices queda fuera a propósito: solo se enfoca al hacer clic, no
+    // cada vez que se refresca la lista de equipos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enfocado, map]);
+
+  return null;
+}
 
 const VERDE = "#22c55e";
 const AMARILLO = "#eab308";
@@ -44,12 +81,16 @@ export function MapView({
   center,
   zoom = 13,
   altura = "100%",
+  enfocado,
 }: {
   devices: Device[];
   center?: [number, number];
   zoom?: number;
   altura?: string;
+  enfocado?: EquipoEnfocado;
 }) {
+  const marcadores = useRef(new Map<string, LeafletCircleMarker>());
+
   // Nunca se dibuja un marcador para un equipo sin latitud/longitud real
   // — no hay forma honesta de "inventar" dónde está.
   const conUbicacion = devices.filter((d) => d.ubicacion);
@@ -79,6 +120,8 @@ export function MapView({
             />
           </LayersControl.BaseLayer>
         </LayersControl>
+
+        <EnfocarEquipo enfocado={enfocado} devices={conUbicacion} marcadores={marcadores} />
 
         {conUbicacion.map((d) => {
           // Sin señal (sin lectura reciente del daemon) = rojo, siempre —
@@ -112,6 +155,10 @@ export function MapView({
                 />
               )}
               <CircleMarker
+                ref={(m) => {
+                  if (m) marcadores.current.set(d.id, m);
+                  else marcadores.current.delete(d.id);
+                }}
                 center={[lat, lng]}
                 radius={d.dentroDeArea ? 8 : 12}
                 pathOptions={{

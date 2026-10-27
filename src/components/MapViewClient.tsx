@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { Device } from "@/types/device";
+import type { EquipoEnfocado } from "./MapView";
 
 // Leaflet toca `window` al importarse, así que el mapa se carga solo en
 // el cliente (sin SSR) desde este wrapper.
@@ -19,6 +20,7 @@ export function MapViewClient(props: {
   center?: [number, number];
   zoom?: number;
   altura?: string;
+  enfocado?: EquipoEnfocado;
 }) {
   return <MapView {...props} />;
 }

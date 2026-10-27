@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { Device } from "@/types/device";
 import { DeviceTable } from "./DeviceTable";
@@ -15,6 +16,7 @@ export function DevicesClient({
   areas: string[];
   puedeEditar: boolean;
 }) {
+  const router = useRouter();
   const [devices, setDevices] = useState(devicesIniciales);
   const [editando, setEditando] = useState<Device | null>(null);
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -30,7 +32,7 @@ export function DevicesClient({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold">Inventario de equipos</h1>
           <p className="text-sm text-muted">{devices.length} equipos registrados</p>
@@ -53,6 +55,8 @@ export function DevicesClient({
         devices={devices}
         areas={areas}
         pageSize={10}
+        // Esta página no tiene mapa: se abre /map enfocado en el equipo.
+        onSeleccionar={(d) => router.push(`/map?equipo=${encodeURIComponent(d.id)}`)}
         puedeComentar={puedeEditar}
         onEdit={
           puedeEditar

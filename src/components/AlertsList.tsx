@@ -167,8 +167,8 @@ function AlertCard({
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="font-medium">
             {a.hostname} <span className="font-normal text-muted">· {a.custodioNombre}</span>
           </p>

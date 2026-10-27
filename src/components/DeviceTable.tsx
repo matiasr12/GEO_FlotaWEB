@@ -13,6 +13,7 @@ import {
   Download,
   Check,
   Monitor,
+  MapPin,
   User,
   X,
   FilterX,
@@ -279,6 +280,8 @@ export function DeviceTable({
   onEdit,
   puedeComentar = false,
   onFiltrados,
+  onSeleccionar,
+  seleccionadoId,
 }: {
   devices: Device[];
   areas?: string[];
@@ -288,6 +291,9 @@ export function DeviceTable({
   // Avisa hacia afuera qué equipos quedaron visibles tras los filtros —
   // el dashboard lo usa para que el mapa muestre solo lo que se buscó.
   onFiltrados?: (devices: Device[]) => void;
+  // Clic en hostname/trabajador/área: ubicar el equipo en el mapa.
+  onSeleccionar?: (device: Device) => void;
+  seleccionadoId?: string | null;
 }) {
   const [pagina, setPagina] = useState(1);
   const [filtroHostname, setFiltroHostname] = useState("");
@@ -447,7 +453,7 @@ export function DeviceTable({
       </div>
 
       <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
+      <table className="w-full min-w-[760px] text-left text-sm">
         <thead>
           <tr className="border-b border-border text-muted">
             <th className="px-5 py-3 font-medium">Hostname</th>
@@ -459,24 +465,60 @@ export function DeviceTable({
           </tr>
         </thead>
         <tbody>
-          {visibles.map((d) => (
+          {visibles.map((d) => {
+            const ubicable = Boolean(onSeleccionar && d.ubicacion);
+            // Solo estas tres celdas: el comentario y el lápiz tienen sus
+            // propios clics.
+            const celdaUbicable = ubicable
+              ? {
+                  onClick: () => onSeleccionar!(d),
+                  title: "Ver en el mapa",
+                  className: "cursor-pointer",
+                }
+              : { title: onSeleccionar ? "Este equipo no tiene ubicación" : undefined, className: "" };
+            return (
             <tr
               key={d.id}
-              className={`border-b border-border last:border-0 ${
-                d.estado === "alerta" ? "bg-danger/10" : ""
-              }`}
+              className={`group border-b border-border last:border-0 ${
+                seleccionadoId === d.id
+                  ? "bg-accent/10"
+                  : d.estado === "alerta"
+                    ? "bg-danger/10"
+                    : ""
+              } ${ubicable ? "hover:bg-surface-alt" : ""}`}
             >
-              <td className="px-5 py-3 font-medium">
+              <td
+                onClick={celdaUbicable.onClick}
+                title={celdaUbicable.title}
+                className={`px-5 py-3 font-medium ${celdaUbicable.className}`}
+              >
                 <span className="inline-flex items-center gap-1.5">
+                  {ubicable && (
+                    <MapPin
+                      className={`h-3.5 w-3.5 shrink-0 ${
+                        seleccionadoId === d.id ? "text-accent" : "text-muted group-hover:text-accent"
+                      }`}
+                    />
+                  )}
                   {d.hostname}
                   {d.estado === "alerta" && <span title="Alerta">⚠️</span>}
                 </span>
               </td>
-              <td className="px-5 py-3 text-muted">
+              <td
+                onClick={celdaUbicable.onClick}
+                title={celdaUbicable.title}
+                className={`px-5 py-3 text-muted ${celdaUbicable.className}`}
+              >
                 {d.custodioNombre}
                 {d.turno && <div className="text-xs text-muted/70">{d.turno}</div>}
               </td>
-              <td className="px-5 py-3 text-muted">{areaTexto(d)}</td>
+              <td
+                onClick={celdaUbicable.onClick}
+                title={celdaUbicable.title}
+                className={`px-5 py-3 text-muted ${celdaUbicable.className}`}
+              >
+                {areaTexto(d)}
+              </td>
               <td className="px-5 py-3">
                 <StatusBadge estado={d.estado} />
               </td>
@@ -494,7 +536,8 @@ export function DeviceTable({
                 </td>
               )}
             </tr>
-          ))}
+            );
+          })}
           {visibles.length === 0 && (
             <tr>
               <td colSpan={onEdit ? 6 : 5} className="px-5 py-8 text-center text-muted">

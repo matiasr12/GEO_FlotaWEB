@@ -18,17 +18,23 @@
 /* Modo claro: lo activa el botón sol/luna del Topbar (data-theme en
    <html>, ver ThemeToggle.tsx). Mismos tokens, otros valores. */
 :root[data-theme="light"] {
-  --background: #f3f6fb;
+  --background: #f8fafc;
   --surface: #ffffff;
-  --surface-alt: #eef2f8;
-  --border: #d5deeb;
+  --surface-alt: #f1f5f9;
+  --border: #e2e8f0;
   --foreground: #0f172a;
-  --muted: #5b6b85;
+  --muted: #64748b;
   --accent: #2563eb;
   --danger: #dc2626;
   --warning: #b45309;
   --success: #16a34a;
   color-scheme: light;
+}
+
+/* En modo claro las tarjetas blancas sobre fondo casi blanco necesitan
+   una sombra suave para separarse. */
+:root[data-theme="light"] .bg-surface {
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
 }
 
 @theme inline {

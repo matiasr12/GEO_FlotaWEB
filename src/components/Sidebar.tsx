@@ -10,6 +10,7 @@ import {
   FileText,
   Settings,
   Globe2,
+  X,
 } from "lucide-react";
 import type { Role } from "@/types/user";
 import { tienePermiso } from "@/lib/auth/rbac";
@@ -23,16 +24,47 @@ const ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings, permiso: undefined },
 ];
 
-export function Sidebar({ role }: { role: Role }) {
+export function Sidebar({
+  role,
+  abierto,
+  onCerrar,
+}: {
+  role: Role;
+  abierto: boolean;
+  onCerrar: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-surface">
-      <div className="flex items-center gap-2 px-6 py-6">
-        <Globe2 className="h-7 w-7 text-accent" />
-        <span className="text-lg font-semibold">
-          Geo<span className="text-accent">Flota</span>
+    <>
+      {/* Fondo oscuro detrás del menú en celular; tocarlo lo cierra. */}
+      {abierto && (
+        <div
+          onClick={onCerrar}
+          aria-hidden
+          className="fixed inset-0 z-[1190] bg-black/50 lg:hidden"
+        />
+      )}
+    <aside
+      className={`fixed inset-y-0 left-0 z-[1200] flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform duration-200 lg:static lg:z-auto lg:translate-x-0 ${
+        abierto ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2 px-6 py-6">
+        <span className="flex items-center gap-2">
+          <Globe2 className="h-7 w-7 text-accent" />
+          <span className="text-lg font-semibold">
+            Geo<span className="text-accent">Flota</span>
+          </span>
         </span>
+        <button
+          type="button"
+          onClick={onCerrar}
+          aria-label="Cerrar menú"
+          className="rounded-md p-1 text-muted hover:bg-surface-alt hover:text-foreground lg:hidden"
+        >
+          <X className="h-5 w-5" />
+        </button>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3">
@@ -44,6 +76,7 @@ export function Sidebar({ role }: { role: Role }) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={onCerrar}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
                   activo
                     ? "bg-accent text-white"
@@ -58,5 +91,6 @@ export function Sidebar({ role }: { role: Role }) {
         )}
       </nav>
     </aside>
+    </>
   );
 }

@@ -189,8 +189,8 @@ export function DataRequestForm({
         </p>
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        <table className="w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
             <tr className="border-b border-border text-muted">
               <th className="px-5 py-3 font-medium">Titular</th>

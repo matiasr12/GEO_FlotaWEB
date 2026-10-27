@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { Bell, UserCircle2, LogOut, MapPin } from "lucide-react";
+import { Bell, UserCircle2, LogOut, MapPin, Menu } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@/types/user";
 import type { Device } from "@/types/device";
@@ -28,9 +28,11 @@ const TITULO_PAGINA: Record<string, string> = {
 export function Topbar({
   user,
   equiposEnAlerta,
+  onAbrirMenu,
 }: {
   user: SessionUser;
   equiposEnAlerta: Device[];
+  onAbrirMenu: () => void;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -59,18 +61,28 @@ export function Topbar({
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-border bg-surface px-6 py-4">
-      <h1 className="text-sm font-semibold text-foreground">
-        {TITULO_PAGINA[pathname] ?? "GeoFlota"}
-      </h1>
+    <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onAbrirMenu}
+          aria-label="Abrir menú"
+          className="-ml-1 rounded-md p-1.5 text-muted hover:bg-surface-alt hover:text-foreground lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <h1 className="truncate text-sm font-semibold text-foreground">
+          {TITULO_PAGINA[pathname] ?? "GeoFlota"}
+        </h1>
+      </div>
 
-      <div className="flex items-center gap-5">
+      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
         {/* <img> plano a propósito: el optimizador de next/image falla en el
             plan F1 de Azure, y un logo estático chico no lo necesita. */}
         <img
           src="/logo-web.png"
           alt="Caserones — SCM Minera Lumina Copper Chile"
-          className="h-12 w-auto object-contain"
+          className="hidden h-12 w-auto object-contain sm:block"
         />
 
         <ThemeToggle />
@@ -90,7 +102,7 @@ export function Topbar({
           </button>
 
           {notifAbierta && (
-            <div className="absolute right-0 z-[1100] mt-2 w-80 rounded-lg border border-border bg-surface-alt shadow-xl">
+            <div className="absolute -right-12 z-[1100] mt-2 w-[calc(100vw-2rem)] max-w-80 rounded-lg sm:right-0 border border-border bg-surface-alt shadow-xl">
               <div className="border-b border-border px-4 py-3">
                 <p className="text-sm font-medium">
                   {equiposEnAlerta.length > 0

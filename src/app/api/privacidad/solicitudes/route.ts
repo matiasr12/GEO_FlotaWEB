@@ -46,17 +46,24 @@ export async function POST(req: Request) {
 
   // Aviso al titular. Si falla, la solicitud ya quedó registrada: se
   // informa al panel para que el admin avise por otro medio.
+  // correoError va al formulario (solo admins ven esta página) para saber
+  // por qué no salió sin tener que abrir el Log stream de Azure.
   let correoEnviado = false;
-  if (correoConfigurado()) {
+  let correoError: string | undefined;
+  if (!correoConfigurado()) {
+    correoError = "El servicio de correo no está configurado (faltan ACS_CONNECTION_STRING o ACS_SENDER_ADDRESS en el App Service).";
+    console.error("[privacidad]", correoError);
+  } else {
     try {
       await avisarSolicitudEnRevision(solicitud);
       correoEnviado = true;
     } catch (err) {
+      correoError = err instanceof Error ? err.message : String(err);
       console.error("[privacidad] no se pudo enviar el correo al titular:", err);
     }
   }
 
-  return NextResponse.json({ ...solicitud, correoEnviado }, { status: 201 });
+  return NextResponse.json({ ...solicitud, correoEnviado, correoError }, { status: 201 });
 }
 
 const TIPO_LABEL: Record<TipoSolicitud, string> = {

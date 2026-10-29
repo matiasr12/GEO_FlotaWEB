@@ -89,12 +89,17 @@ export function DataRequestForm({
         }),
       });
       if (res.ok) {
-        const { correoEnviado, ...nueva } = await res.json();
+        const { correoEnviado, correoError, ...nueva } = await res.json();
         setSolicitudes((prev) => [nueva, ...prev]);
         setAviso(
           correoEnviado
             ? { ok: true, texto: `Solicitud registrada. Se envió un correo a ${nueva.solicitanteEmail} avisando que está en revisión.` }
-            : { ok: false, texto: "Solicitud registrada, pero no se pudo enviar el correo al titular. Avísale por otro medio." }
+            : {
+                ok: false,
+                texto: `Solicitud registrada, pero no se pudo enviar el correo al titular. Avísale por otro medio.${
+                  correoError ? ` Motivo: ${correoError}` : ""
+                }`,
+              }
         );
         setNombre("");
         setEmail("");

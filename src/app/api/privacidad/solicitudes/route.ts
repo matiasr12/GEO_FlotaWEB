@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
-import { crearSolicitud, listarSolicitudes } from "@/lib/data-subject-requests";
+import {
+  crearSolicitud,
+  listarSolicitudes,
+  type DataSubjectRequest,
+  type TipoSolicitud,
+} from "@/lib/data-subject-requests";
+import { correoConfigurado, enviarCorreo, escaparHtml } from "@/lib/email";
 import { registrarAuditoria } from "@/lib/audit";
 
 export async function GET() {
@@ -38,5 +44,48 @@ export async function POST(req: Request) {
     detalle: `${solicitud.tipoSolicitud} · ${solicitud.solicitanteEmail}`,
   });
 
-  return NextResponse.json(solicitud, { status: 201 });
+  // Aviso al titular. Si falla, la solicitud ya quedó registrada: se
+  // informa al panel para que el admin avise por otro medio.
+  let correoEnviado = false;
+  if (correoConfigurado()) {
+    try {
+      await avisarSolicitudEnRevision(solicitud);
+      correoEnviado = true;
+    } catch (err) {
+      console.error("[privacidad] no se pudo enviar el correo al titular:", err);
+    }
+  }
+
+  return NextResponse.json({ ...solicitud, correoEnviado }, { status: 201 });
+}
+
+const TIPO_LABEL: Record<TipoSolicitud, string> = {
+  acceso: "acceso a sus datos",
+  rectificacion: "rectificación de sus datos",
+  cancelacion: "cancelación / eliminación de sus datos",
+  oposicion: "oposición al tratamiento de sus datos",
+};
+
+async function avisarSolicitudEnRevision(s: DataSubjectRequest) {
+  const tipo = TIPO_LABEL[s.tipoSolicitud];
+  const fecha = new Date(s.creadoEn).toLocaleDateString("es-CL");
+  const nombre = escaparHtml(s.solicitanteNombre);
+
+  await enviarCorreo({
+    para: s.solicitanteEmail,
+    nombre: s.solicitanteNombre,
+    asunto: "Tu solicitud de datos personales está en revisión",
+    texto:
+      `Hola ${s.solicitanteNombre}:\n\n` +
+      `Recibimos tu solicitud de ${tipo} (${fecha}) y quedó en revisión. ` +
+      `Te contactaremos por este medio cuando tengamos una respuesta.\n\n` +
+      `Número de solicitud: ${s.id}\n\n` +
+      `Este es un mensaje automático, por favor no respondas a este correo.`,
+    html:
+      `<p>Hola ${nombre}:</p>` +
+      `<p>Recibimos tu solicitud de <strong>${escaparHtml(tipo)}</strong> (${fecha}) y quedó ` +
+      `<strong>en revisión</strong>. Te contactaremos por este medio cuando tengamos una respuesta.</p>` +
+      `<p style="color:#64748b;font-size:12px">Número de solicitud: ${s.id}<br>` +
+      `Este es un mensaje automático, por favor no respondas a este correo.</p>`,
+  });
 }

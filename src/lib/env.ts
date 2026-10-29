@@ -20,6 +20,11 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => v === "true"),
+  // Azure Communication Services Email (opcional): sin estas dos, las
+  // solicitudes de privacidad se registran igual pero no se avisa por
+  // correo al titular. Ver lib/email.ts.
+  ACS_CONNECTION_STRING: z.string().min(1).optional(),
+  ACS_SENDER_ADDRESS: z.string().email().optional(),
 });
 
 type Env = z.infer<typeof envSchema>;
@@ -48,6 +53,8 @@ export function getEnv(): Env {
       AZURE_SQL_USER: process.env.AZURE_SQL_USER,
       AZURE_SQL_PASSWORD: process.env.AZURE_SQL_PASSWORD,
       USE_MOCK_DATA: process.env.USE_MOCK_DATA,
+      ACS_CONNECTION_STRING: process.env.ACS_CONNECTION_STRING,
+      ACS_SENDER_ADDRESS: process.env.ACS_SENDER_ADDRESS,
     });
   }
   return cached;

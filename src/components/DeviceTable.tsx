@@ -200,6 +200,8 @@ async function descargarExcel(devices: Device[], filtros: string[]) {
     { header: "Faena", key: "faena", width: 18 },
     { header: "Código de activo", key: "codigoActivo", width: 18 },
     { header: "Turno", key: "turno", width: 16 },
+    { header: "Teléfono", key: "telefono", width: 16 },
+    { header: "Correo", key: "correo", width: 30 },
   ];
   hoja.getRow(1).font = { bold: true };
 
@@ -212,6 +214,8 @@ async function descargarExcel(devices: Device[], filtros: string[]) {
       faena: d.faena ?? "",
       codigoActivo: d.codigoActivo ?? "",
       turno: d.turno ?? "",
+      telefono: d.telefono ?? "",
+      correo: d.correo ?? "",
     });
   }
 

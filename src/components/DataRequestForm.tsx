@@ -7,6 +7,7 @@ import type { DataSubjectRequest, TipoSolicitud } from "@/lib/data-subject-reque
 export interface PersonaTitular {
   clave: string;
   nombre: string;
+  correo?: string | null; // desde dbo.Personal; se autocompleta al elegirlo
   detalle: string; // RUT · área · equipo
 }
 
@@ -37,6 +38,7 @@ export function DataRequestForm({
   const [tipo, setTipo] = useState<TipoSolicitud>("acceso");
   const [detalle, setDetalle] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
   const [abierto, setAbierto] = useState(false);
   const [resaltado, setResaltado] = useState(0);
 
@@ -51,6 +53,7 @@ export function DataRequestForm({
 
   function elegir(p: PersonaTitular) {
     setNombre(p.nombre);
+    if (p.correo) setEmail(p.correo);
     setAbierto(false);
   }
 
@@ -73,6 +76,7 @@ export function DataRequestForm({
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setEnviando(true);
+    setAviso(null);
     try {
       const res = await fetch("/api/privacidad/solicitudes", {
         method: "POST",
@@ -85,8 +89,13 @@ export function DataRequestForm({
         }),
       });
       if (res.ok) {
-        const nueva = await res.json();
+        const { correoEnviado, ...nueva } = await res.json();
         setSolicitudes((prev) => [nueva, ...prev]);
+        setAviso(
+          correoEnviado
+            ? { ok: true, texto: `Solicitud registrada. Se envió un correo a ${nueva.solicitanteEmail} avisando que está en revisión.` }
+            : { ok: false, texto: "Solicitud registrada, pero no se pudo enviar el correo al titular. Avísale por otro medio." }
+        );
         setNombre("");
         setEmail("");
         setDetalle("");
@@ -182,6 +191,15 @@ export function DataRequestForm({
         >
           {enviando ? "Guardando..." : "Registrar solicitud"}
         </button>
+        {aviso && (
+          <p
+            className={`mt-3 rounded-md px-3 py-2 text-sm ${
+              aviso.ok ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+            }`}
+          >
+            {aviso.texto}
+          </p>
+        )}
         <p className="mt-3 text-xs text-muted">
           Esta primera versión solo deja la solicitud registrada para gestión
           manual; la eliminación/entrega automática de datos queda para una

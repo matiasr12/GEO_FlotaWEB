@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { listarEquipos } from "@/lib/devices";
+import { normalizarRut, obtenerContactos } from "@/lib/personal";
 import { listarSolicitudes } from "@/lib/data-subject-requests";
 import { DataRequestForm, type PersonaTitular } from "@/components/DataRequestForm";
 
@@ -9,9 +10,10 @@ export default async function PrivacidadPage() {
   const user = await obtenerSesion();
   if (!user || !tienePermiso(user.role, "privacidad:gestionar")) redirect("/dashboard");
 
-  const [solicitudes, equipos] = await Promise.all([
+  const [solicitudes, equipos, contactos] = await Promise.all([
     listarSolicitudes(),
     listarEquipos(),
+    obtenerContactos(),
   ]);
 
   // Posibles titulares: los trabajadores con computador asignado (son de
@@ -25,6 +27,7 @@ export default async function PrivacidadPage() {
     personas.push({
       clave: `trabajador-${e.custodioId}`,
       nombre: e.custodioNombre,
+      correo: contactos.get(normalizarRut(e.custodioId))?.correo ?? null,
       detalle: [e.custodioId, e.areaDetectada ?? e.area ?? e.faena, e.hostname]
         .filter(Boolean)
         .join(" · "),

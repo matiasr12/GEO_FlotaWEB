@@ -152,6 +152,11 @@ export function DataRequestForm({
                     }`}
                   >
                     <span className="block">{p.nombre}</span>
+                    {/* El correo a la vista: si una persona aparece dos
+                        veces en dbo.Personal, se ve cuál tiene contacto. */}
+                    <span className={`block truncate text-xs ${p.correo ? "text-accent" : "text-muted/70 italic"}`}>
+                      {p.correo ?? "Sin correo registrado"}
+                    </span>
                     <span className="block truncate text-xs text-muted">{p.detalle}</span>
                   </li>
                 ))}

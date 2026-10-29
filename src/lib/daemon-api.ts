@@ -16,11 +16,12 @@ import { getMockDevices } from "@/lib/mock-data";
 
 const SIN_SENAL_MINUTOS = 30;
 
-// GET /api/equipos resuelve latitud/longitud con el servicio de
-// ubicación del propio notebook (Windows/Google) — BssidsArea solo queda
-// como respaldo para cuando esa ubicación no es confiable. Si el equipo
-// no tiene ubicación disponible, el backend manda null y acá se deja sin
-// ubicación en vez de inventar coordenadas.
+// GET /api/equipos resuelve latitud/longitud con el promedio de los
+// routers de BssidsArea que ve la lectura (centroide); la ubicación del
+// propio notebook (Windows/Google) solo queda como respaldo cuando no ve
+// ningún router registrado. Si el equipo no tiene ubicación disponible,
+// el backend manda null y acá se deja sin ubicación en vez de inventar
+// coordenadas.
 function mapEquipoToDevice(e: EquipoApiDTO): Device {
   const nombre = [e.personalNombre, e.personalApellido].filter(Boolean).join(" ").trim();
   const ultimaLectura = e.receivedAt ? new Date(e.receivedAt).getTime() : NaN;
@@ -87,9 +88,11 @@ async function fetchDaemonAPI<T>(path: string, init?: RequestInit): Promise<T> {
     // servidor estuvo unos minutos sin tráfico y algún NAT/balanceador de
     // por medio la cortó en silencio) se queda colgado indefinidamente —
     // la página "no hace nada" al navegar porque está esperando una
-    // respuesta que nunca va a llegar. Con esto falla rápido en vez de
-    // colgarse para siempre.
-    signal: AbortSignal.timeout(10_000),
+    // respuesta que nunca va a llegar. Con esto falla en vez de colgarse
+    // para siempre. Es de 70 s y no menos porque la base serverless tarda
+    // hasta ~1 min en despertar de la auto-pausa (el backend espera 60 s
+    // para conectarse); con 10 s la primera carga de la mañana daba 0 equipos.
+    signal: AbortSignal.timeout(70_000),
   });
 
   if (!res.ok) {

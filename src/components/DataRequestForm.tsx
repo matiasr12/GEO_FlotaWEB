@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { DataSubjectRequest, TipoSolicitud } from "@/lib/data-subject-requests";
+import { ESTADO_CONFIG, SolicitudDetalleModal, TIPO_LABEL } from "./SolicitudDetalleModal";
 
 // Trabajador con computador asignado.
 export interface PersonaTitular {
@@ -39,6 +40,7 @@ export function DataRequestForm({
   const [detalle, setDetalle] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [aviso, setAviso] = useState<{ ok: boolean; texto: string } | null>(null);
+  const [detalleId, setDetalleId] = useState<string | null>(null);
   const [abierto, setAbierto] = useState(false);
   const [resaltado, setResaltado] = useState(0);
 
@@ -229,13 +231,22 @@ export function DataRequestForm({
           </thead>
           <tbody>
             {solicitudes.map((s) => (
-              <tr key={s.id} className="border-b border-border last:border-0">
+              <tr
+                key={s.id}
+                onClick={() => setDetalleId(s.id)}
+                title="Ver y gestionar la solicitud"
+                className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-alt"
+              >
                 <td className="px-5 py-3">
-                  {s.solicitanteNombre}
+                  <span className="text-accent hover:underline">{s.solicitanteNombre}</span>
                   <span className="block text-xs text-muted">{s.solicitanteEmail}</span>
                 </td>
-                <td className="px-5 py-3 text-muted">{s.tipoSolicitud}</td>
-                <td className="px-5 py-3 text-muted">{s.estado}</td>
+                <td className="px-5 py-3 text-muted">{TIPO_LABEL[s.tipoSolicitud]}</td>
+                <td className="px-5 py-3">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${ESTADO_CONFIG[s.estado].className}`}>
+                    {ESTADO_CONFIG[s.estado].label}
+                  </span>
+                </td>
                 <td className="px-5 py-3 text-muted">
                   {new Date(s.creadoEn).toLocaleDateString("es-CL")}
                 </td>
@@ -251,6 +262,16 @@ export function DataRequestForm({
           </tbody>
         </table>
       </div>
+
+      {detalleId && (
+        <SolicitudDetalleModal
+          solicitudId={detalleId}
+          onCerrar={() => setDetalleId(null)}
+          onActualizada={(actualizada) =>
+            setSolicitudes((prev) => prev.map((s) => (s.id === actualizada.id ? actualizada : s)))
+          }
+        />
+      )}
     </div>
   );
 }

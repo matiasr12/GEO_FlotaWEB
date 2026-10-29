@@ -11,7 +11,11 @@ export type AuditAction =
   | "eliminar_equipo"
   | "reconocer_alerta"
   | "comentar_alerta"
-  | "solicitud_titular_datos";
+  | "solicitud_titular_datos"
+  | "ver_solicitud_titular"
+  | "estado_solicitud_titular"
+  | "comentar_solicitud_titular"
+  | "avisar_titular";
 
 export interface AuditLogEntry {
   id: string;

@@ -118,17 +118,22 @@ export function SolicitudDetalleModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mensaje: mensaje.trim() || undefined }),
       });
-      const data = await res.json();
+      // Si el servidor falla con una página de error (no JSON), igual se
+      // muestra algo en vez de quedar en silencio.
+      const data = await res.json().catch(() => ({}));
       if (data.notas) setNotas(data.notas);
       if (res.ok && data.correoEnviado) {
         setMensaje("");
         setAviso({ ok: true, texto: `Se envió el estado de la solicitud a ${solicitud.solicitanteEmail}.` });
       } else {
+        const motivo = data.correoError ?? data.error ?? (res.ok ? undefined : `error ${res.status} del servidor`);
         setAviso({
           ok: false,
-          texto: `No se pudo enviar el correo.${data.correoError ? ` Motivo: ${data.correoError}` : ""}`,
+          texto: `No se pudo enviar el correo.${motivo ? ` Motivo: ${motivo}` : ""}`,
         });
       }
+    } catch {
+      setAviso({ ok: false, texto: "No se pudo enviar el correo: sin conexión con el panel." });
     } finally {
       setAvisando(false);
     }

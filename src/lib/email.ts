@@ -15,14 +15,32 @@ export function correoConfigurado(): boolean {
 
 // "endpoint=https://x.communication.azure.com/;accesskey=..." → partes
 function leerConnectionString(cs: string) {
+  // Tolera comillas, espacios y saltos de línea que quedan al pegar el
+  // valor en las Variables de entorno del App Service.
+  let limpio = cs.trim().replace(/^["']|["']$/g, "").trim();
+  // Si quedó algo pegado adelante (ej. "ACS_CONNECTION_STRING=endpoint=..."),
+  // se descarta todo lo anterior a "endpoint=".
+  const desde = limpio.toLowerCase().indexOf("endpoint=");
+  if (desde > 0) limpio = limpio.slice(desde);
   const partes = Object.fromEntries(
-    cs.split(";").filter(Boolean).map((p) => {
-      const i = p.indexOf("=");
-      return [p.slice(0, i).toLowerCase(), p.slice(i + 1)];
-    })
+    limpio
+      .split(";")
+      .map((p) => p.trim())
+      .filter((p) => p.includes("="))
+      .map((p) => {
+        const i = p.indexOf("=");
+        return [p.slice(0, i).trim().toLowerCase(), p.slice(i + 1).trim()];
+      })
   );
   if (!partes.endpoint || !partes.accesskey) {
-    throw new Error("ACS_CONNECTION_STRING no tiene endpoint y accesskey");
+    // Sin mostrar la clave: solo qué parte falta, para saber qué se copió mal.
+    const faltan = [!partes.endpoint && "endpoint=", !partes.accesskey && "accesskey="]
+      .filter(Boolean)
+      .join(" y ");
+    throw new Error(
+      `ACS_CONNECTION_STRING no tiene ${faltan}. Copia la "Connection string" (no la "Key") ` +
+        `de geoflota-correo → Keys; debe empezar con endpoint=https://`
+    );
   }
   return { endpoint: new URL(partes.endpoint), accessKey: partes.accesskey };
 }

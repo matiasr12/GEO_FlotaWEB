@@ -59,5 +59,8 @@ function redirigirALogin(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Las imágenes de /public (logos) quedan fuera del login: los correos al
+  // titular cargan el logo desde el panel y el cliente de correo no tiene
+  // sesión. /public no contiene nada sensible.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|jpg|jpeg|ico)$).*)"],
 };

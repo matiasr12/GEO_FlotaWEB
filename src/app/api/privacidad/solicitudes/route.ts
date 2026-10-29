@@ -3,7 +3,7 @@ import { z } from "zod";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { crearSolicitud, listarSolicitudes } from "@/lib/data-subject-requests";
-import { avisarSolicitudEnRevision, intentarAviso } from "@/lib/avisos-privacidad";
+import { avisarSolicitudEnRevision, intentarAviso, origenPublico } from "@/lib/avisos-privacidad";
 import { registrarAuditoria } from "@/lib/audit";
 
 export async function GET() {
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   // Aviso al titular. Si falla, la solicitud ya quedó registrada: se
   // informa al panel para que el admin avise por otro medio.
-  const aviso = await intentarAviso(() => avisarSolicitudEnRevision(solicitud));
+  const aviso = await intentarAviso(() => avisarSolicitudEnRevision(solicitud, origenPublico(req)));
 
   return NextResponse.json({ ...solicitud, ...aviso }, { status: 201 });
 }

@@ -8,7 +8,12 @@ import {
   listarNotas,
   obtenerSolicitud,
 } from "@/lib/data-subject-requests";
-import { avisarEstadoSolicitud, ESTADO_LABEL, intentarAviso } from "@/lib/avisos-privacidad";
+import {
+  avisarEstadoSolicitud,
+  ESTADO_LABEL,
+  intentarAviso,
+  origenPublico,
+} from "@/lib/avisos-privacidad";
 import { registrarAuditoria } from "@/lib/audit";
 
 const bodySchema = z.object({
@@ -39,7 +44,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const mensaje = parsed.data.mensaje || undefined;
-  const aviso = await intentarAviso(() => avisarEstadoSolicitud(solicitud, mensaje));
+  const aviso = await intentarAviso(() =>
+    avisarEstadoSolicitud(solicitud, origenPublico(req), mensaje)
+  );
 
   if (aviso.correoEnviado) {
     await agregarNota(id, user, {

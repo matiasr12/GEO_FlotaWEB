@@ -3,6 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { getEnv } from "@/lib/env";
 import { obtenerUsuarioVigente } from "@/lib/auth/users";
+import { EXP_COOKIE_NAME } from "@/lib/session-cookie";
 import type { SessionUser } from "@/types/user";
 
 const COOKIE_NAME = "geoflota_session";
@@ -27,6 +28,13 @@ export async function crearSesion(user: SessionUser) {
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    expires: expira,
+    path: "/",
+  });
+  store.set(EXP_COOKIE_NAME, String(expira.getTime()), {
+    httpOnly: false,
     secure: true,
     sameSite: "strict",
     expires: expira,
@@ -68,6 +76,7 @@ export async function obtenerSesion(): Promise<SessionUser | null> {
 export async function cerrarSesion() {
   const store = await cookies();
   store.delete(COOKIE_NAME);
+  store.delete(EXP_COOKIE_NAME);
 }
 
 export const SESSION_COOKIE_NAME = COOKIE_NAME;

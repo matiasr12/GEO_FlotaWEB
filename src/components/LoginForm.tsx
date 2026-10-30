@@ -147,6 +147,12 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
           />
           <div ref={widgetRef} className="flex justify-center" />
 
+          {!error && params.get("expirada") === "1" && (
+            <p className="rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
+              Tu sesión se cerró por inactividad. Vuelve a ingresar.
+            </p>
+          )}
+
           {error && (
             <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
               {error}

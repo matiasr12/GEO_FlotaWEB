@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
+import { EXP_COOKIE_NAME } from "@/lib/session-cookie";
 
 const COOKIE_NAME = "geoflota_session";
 const secret = new TextEncoder().encode(process.env.SESSION_SECRET ?? "");
@@ -40,6 +41,13 @@ export async function proxy(req: NextRequest) {
       expires: nuevaExpiracion,
       path: "/",
     });
+    res.cookies.set(EXP_COOKIE_NAME, String(nuevaExpiracion.getTime()), {
+      httpOnly: false,
+      secure: true,
+      sameSite: "strict",
+      expires: nuevaExpiracion,
+      path: "/",
+    });
     return res;
   } catch {
     return redirigirALogin(req);
@@ -55,6 +63,7 @@ function redirigirALogin(req: NextRequest) {
   url.searchParams.set("next", req.nextUrl.pathname);
   const res = NextResponse.redirect(url);
   res.cookies.delete(COOKIE_NAME);
+  res.cookies.delete(EXP_COOKIE_NAME);
   return res;
 }
 

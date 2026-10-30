@@ -82,12 +82,17 @@ export function LoginForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
         // para el próximo intento.
         setTurnstileToken(null);
         window.turnstile?.reset(widgetId.current ?? undefined);
+        setCargando(false);
         return;
       }
 
+      // Con éxito el botón sigue en "Ingresando..." hasta que cambia la
+      // página: antes volvía a "Ingresar" al instante y parecía que el
+      // login no había hecho nada mientras cargaba el dashboard.
       router.push(destinoSeguro(params.get("next")));
       router.refresh();
-    } finally {
+    } catch {
+      setError("No se pudo conectar con el servidor, intenta de nuevo");
       setCargando(false);
     }
   }

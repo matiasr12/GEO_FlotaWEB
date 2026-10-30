@@ -16,7 +16,9 @@ export async function verificarTurnstile(token: string, ip?: string): Promise<bo
   if (ip) body.set("remoteip", ip);
 
   try {
-    const res = await fetch(VERIFY_URL, { method: "POST", body });
+    // Sin timeout, si Cloudflare no responde el login queda esperando para
+    // siempre.
+    const res = await fetch(VERIFY_URL, { method: "POST", body, signal: AbortSignal.timeout(10_000) });
     if (!res.ok) return false;
     const data = (await res.json()) as { success: boolean };
     return data.success === true;

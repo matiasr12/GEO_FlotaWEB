@@ -14,7 +14,7 @@ export function AppShell({
   children,
 }: {
   user: SessionUser;
-  equiposEnAlerta: Device[];
+  equiposEnAlerta: Promise<Device[]>;
   children: ReactNode;
 }) {
   const [menuAbierto, setMenuAbierto] = useState(false);

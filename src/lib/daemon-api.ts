@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getEnv } from "@/lib/env";
 import type { Device, EquipoApiDTO } from "@/types/device";
 import { getMockDevices } from "@/lib/mock-data";
@@ -104,7 +105,10 @@ async function fetchDaemonAPI<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function listarEquipos(): Promise<Device[]> {
+// cache() de React: dentro de un mismo request, el layout (campana de
+// alertas) y la página comparten una sola llamada al backend en vez de
+// hacer dos.
+export const listarEquipos = cache(async (): Promise<Device[]> => {
   if (getEnv().USE_MOCK_DATA) {
     return getMockDevices();
   }
@@ -118,4 +122,4 @@ export async function listarEquipos(): Promise<Device[]> {
     console.error("[daemon-api] fallo la llamada a /api/equipos:", err);
     return [];
   }
-}
+});

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Bell, UserCircle2, LogOut, MapPin, Menu } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, use, useEffect, useRef, useState } from "react";
 import type { SessionUser } from "@/types/user";
 import type { Device } from "@/types/device";
 import { ThemeToggle } from "./ThemeToggle";
@@ -25,13 +25,58 @@ const TITULO_PAGINA: Record<string, string> = {
   "/settings/privacidad": "Privacidad",
 };
 
+// Las dos leen la misma promesa que manda el layout (ver (app)/layout.tsx).
+function PuntoAlerta({ equiposEnAlerta }: { equiposEnAlerta: Promise<Device[]> }) {
+  const equipos = use(equiposEnAlerta);
+  if (equipos.length === 0) return null;
+  return <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-danger" />;
+}
+
+function ListaAlertas({
+  equiposEnAlerta,
+  onElegir,
+}: {
+  equiposEnAlerta: Promise<Device[]>;
+  onElegir: () => void;
+}) {
+  const equipos = use(equiposEnAlerta);
+  return (
+    <>
+      <div className="border-b border-border px-4 py-3">
+        <p className="text-sm font-medium">
+          {equipos.length > 0
+            ? `${equipos.length} equipo${equipos.length === 1 ? "" : "s"} en alerta`
+            : "Sin alertas activas"}
+        </p>
+      </div>
+
+      {equipos.length > 0 && (
+        <ul className="max-h-72 overflow-y-auto">
+          {equipos.map((d) => (
+            <li key={d.id} className="border-b border-border last:border-0">
+              <Link href="/alerts" onClick={onElegir} className="block px-4 py-2.5 hover:bg-surface">
+                <p className="text-sm font-medium">{d.hostname}</p>
+                <p className="text-xs text-muted">{d.custodioNombre}</p>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-warning">
+                  <MapPin className="h-3 w-3" />
+                  {d.areaDetectada ?? d.area ?? "Fuera del área asignada"}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
 export function Topbar({
   user,
   equiposEnAlerta,
   onAbrirMenu,
 }: {
   user: SessionUser;
-  equiposEnAlerta: Device[];
+  equiposEnAlerta: Promise<Device[]>;
   onAbrirMenu: () => void;
 }) {
   const router = useRouter();
@@ -103,41 +148,27 @@ export function Topbar({
             className="relative rounded-full p-1 hover:bg-surface-alt"
           >
             <Bell className="h-5 w-5 text-muted" />
-            {equiposEnAlerta.length > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-danger" />
-            )}
+            {/* Mientras el backend responde la campana se ve sin punto; no
+                bloquea el resto de la página. */}
+            <Suspense fallback={null}>
+              <PuntoAlerta equiposEnAlerta={equiposEnAlerta} />
+            </Suspense>
           </button>
 
           {notifAbierta && (
             <div className="absolute -right-12 z-[1100] mt-2 w-[calc(100vw-2rem)] max-w-80 rounded-lg sm:right-0 border border-border bg-surface-alt shadow-xl">
-              <div className="border-b border-border px-4 py-3">
-                <p className="text-sm font-medium">
-                  {equiposEnAlerta.length > 0
-                    ? `${equiposEnAlerta.length} equipo${equiposEnAlerta.length === 1 ? "" : "s"} en alerta`
-                    : "Sin alertas activas"}
-                </p>
-              </div>
-
-              {equiposEnAlerta.length > 0 && (
-                <ul className="max-h-72 overflow-y-auto">
-                  {equiposEnAlerta.map((d) => (
-                    <li key={d.id} className="border-b border-border last:border-0">
-                      <Link
-                        href="/alerts"
-                        onClick={() => setNotifAbierta(false)}
-                        className="block px-4 py-2.5 hover:bg-surface"
-                      >
-                        <p className="text-sm font-medium">{d.hostname}</p>
-                        <p className="text-xs text-muted">{d.custodioNombre}</p>
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-warning">
-                          <MapPin className="h-3 w-3" />
-                          {d.areaDetectada ?? d.area ?? "Fuera del área asignada"}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <Suspense
+                fallback={
+                  <div className="border-b border-border px-4 py-3 text-sm text-muted">
+                    Cargando alertas...
+                  </div>
+                }
+              >
+                <ListaAlertas
+                  equiposEnAlerta={equiposEnAlerta}
+                  onElegir={() => setNotifAbierta(false)}
+                />
+              </Suspense>
 
               <Link
                 href="/alerts"

@@ -42,13 +42,17 @@ jobs:
           echo "--- BUILD_ID ---"
           cat .next/standalone/.next/BUILD_ID || echo "BUILD_ID NO EXISTE"
 
+      # followlinks=True: Next deja los paquetes externos (pdfkit) como
+      # enlaces simbolicos en .next/standalone/.next/node_modules/<pkg>-<hash>.
+      # Sin seguirlos, el zip no los incluye y en Azure falla con
+      # "Cannot find module 'pdfkit-<hash>'" (reportes PDF).
       - name: Armar el zip a mano (rutas con / para que funcione en Linux)
         run: |
           python3 -c "
           import zipfile, os
           src = '.next/standalone'
           with zipfile.ZipFile('deploy.zip', 'w', zipfile.ZIP_DEFLATED) as zf:
-              for root, dirs, files in os.walk(src):
+              for root, dirs, files in os.walk(src, followlinks=True):
                   for f in files:
                       full = os.path.join(root, f)
                       rel = os.path.relpath(full, src).replace(os.sep, '/')
@@ -56,6 +60,8 @@ jobs:
           "
           echo "--- contenido del zip ---"
           unzip -l deploy.zip | grep -E "server.js|BUILD_ID"
+          echo "--- paquetes externos (deben aparecer, ej. pdfkit) ---"
+          unzip -l deploy.zip | grep -E "\.next/node_modules/[^/]+/package.json" || echo "NINGUNO"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

@@ -1,7 +1,6 @@
 import "server-only";
 import { readFileSync } from "fs";
 import path from "path";
-import PDFDocument from "pdfkit";
 
 // Plantilla común de los reportes PDF del panel (equipos, auditoría):
 // encabezado con logo, sello de tiempo de generación, filtros, resumen
@@ -49,6 +48,10 @@ export async function generarPdfTabla<T>(p: {
   filas: T[];
   textoVacio: string;
 }): Promise<Buffer> {
+  // Import dinámico a propósito: si pdfkit (o algo que necesita) falta en el
+  // build desplegado, el error ocurre acá dentro y la ruta lo informa con
+  // su motivo, en vez de romper la carga del módulo con un 500 genérico.
+  const { default: PDFDocument } = await import("pdfkit");
   const doc = new PDFDocument({
     size: "A4",
     layout: "landscape",

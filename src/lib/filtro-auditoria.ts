@@ -56,7 +56,7 @@ export interface FiltroAuditoria {
 
 // Sin tildes ni mayúsculas: "matias" encuentra a "Matías".
 export function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 export function filtrarAuditoria(registros: AuditLogEntry[], f: FiltroAuditoria): AuditLogEntry[] {

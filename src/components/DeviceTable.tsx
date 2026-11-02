@@ -33,7 +33,7 @@ const MAX_SUGERENCIAS = 8;
 
 // Sin tildes ni mayúsculas: "matias" encuentra a "Matías".
 function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 const claseCampo =

@@ -16,7 +16,7 @@ const MAX_SUGERENCIAS = 8;
 
 // Sin tildes ni mayúsculas: "jose" encuentra a "José".
 function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 const TIPOS: { value: TipoSolicitud; label: string }[] = [

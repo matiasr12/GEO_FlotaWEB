@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { respuestaErrorReporte } from "@/lib/error-reporte";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { listarAuditoria, registrarAuditoria } from "@/lib/audit";
@@ -13,7 +14,7 @@ function numero(valor: string | null): number | undefined {
 
 // GET /api/reportes/auditoria-pdf?usuario=&rol=&desdeMs=&hastaMs=
 // Mismos filtros que la tabla de Auditoría.
-export async function GET(req: Request) {
+async function generar(req: Request) {
   const user = await obtenerSesion();
   if (!user || !tienePermiso(user.role, "auditoria:ver")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
@@ -74,4 +75,12 @@ export async function GET(req: Request) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+export async function GET(req: Request) {
+  try {
+    return await generar(req);
+  } catch (err) {
+    return respuestaErrorReporte("el PDF de auditoría", err);
+  }
 }

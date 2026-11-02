@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { respuestaErrorReporte } from "@/lib/error-reporte";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { listarEquipos } from "@/lib/devices";
@@ -12,13 +13,13 @@ import type { DeviceStatus } from "@/types/device";
 
 // Sin tildes ni mayúsculas, igual que los filtros de la tabla de equipos.
 function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 // GET /api/reportes/equipos-pdf?hostname=&trabajador=&area=&estado=
 // Mismos filtros que la tabla de equipos, para que el PDF muestre lo que
 // se está viendo en pantalla.
-export async function GET(req: Request) {
+async function generar(req: Request) {
   const user = await obtenerSesion();
   if (!user || !tienePermiso(user.role, "reportes:ver")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
@@ -72,4 +73,12 @@ export async function GET(req: Request) {
       "Cache-Control": "no-store",
     },
   });
+}
+
+export async function GET(req: Request) {
+  try {
+    return await generar(req);
+  } catch (err) {
+    return respuestaErrorReporte("el PDF de equipos", err);
+  }
 }

@@ -11,6 +11,7 @@ import {
   Pencil,
   RotateCw,
   Download,
+  FileText,
   Check,
   Monitor,
   MapPin,
@@ -452,6 +453,21 @@ export function DeviceTable({
               <Download className="h-3.5 w-3.5" />
               Excel
             </button>
+            {/* El PDF lo arma el servidor (pdfkit) con los mismos filtros
+                de la tabla: ver /api/reportes/equipos-pdf. */}
+            <a
+              href={`/api/reportes/equipos-pdf?${new URLSearchParams({
+                hostname: filtroHostname,
+                trabajador: filtroCustodio,
+                area: filtroArea,
+                estado: filtroEstado,
+              }).toString()}`}
+              title={hayFiltros ? "Exportar a PDF los equipos filtrados" : "Exportar a PDF todos los equipos"}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs text-muted hover:bg-surface-alt hover:text-foreground"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Exportar PDF
+            </a>
           </div>
         </div>
       </div>

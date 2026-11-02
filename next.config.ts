@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   // solo copia y corre lo que ya viene armado desde GitHub Actions.
   output: "standalone",
 
+  // pdfkit lee sus fuentes (.afm) desde su propia carpeta en tiempo de
+  // ejecución: no se empaqueta y esas fuentes se copian al build standalone
+  // que sube GitHub Actions a Azure (reporte PDF de equipos).
+  serverExternalPackages: ["pdfkit"],
+  outputFileTracingIncludes: {
+    "/api/reportes/equipos-pdf": ["./node_modules/pdfkit/js/data/**/*"],
+  },
+
   // Headers de seguridad para todas las respuestas. frame-ancestors /
   // X-Frame-Options impiden que otro sitio meta el panel en un iframe
   // para engañar clics (clickjacking).

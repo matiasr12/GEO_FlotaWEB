@@ -15,7 +15,8 @@ export type AuditAction =
   | "ver_solicitud_titular"
   | "estado_solicitud_titular"
   | "comentar_solicitud_titular"
-  | "avisar_titular";
+  | "avisar_titular"
+  | "exportar_pdf_equipos";
 
 export interface AuditLogEntry {
   id: string;

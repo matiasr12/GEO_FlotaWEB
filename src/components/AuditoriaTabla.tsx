@@ -1,20 +1,46 @@
 "use client";
 
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
-import { CalendarDays, ChevronDown, FilterX, User, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Download, FileText, FilterX, User, X } from "lucide-react";
 import type { AuditLogEntry } from "@/types/audit";
+import { filtrarAuditoria, normalizar, ROL_LABEL } from "@/lib/filtro-auditoria";
 
 const MAX_SUGERENCIAS = 8;
+const DIA_MS = 24 * 60 * 60 * 1000;
 
-const ROL_LABEL: Record<string, string> = {
-  admin: "Administrador",
-  supervisor: "Supervisor",
-  auditor: "Auditor",
-};
-
-// Sin tildes ni mayúsculas: "matias" encuentra a "Matías".
-function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+async function descargarExcel(registros: AuditLogEntry[]) {
+  // Import perezoso: exceljs es pesado, solo se carga al exportar.
+  const ExcelJS = (await import("exceljs")).default;
+  const libro = new ExcelJS.Workbook();
+  const hoja = libro.addWorksheet("Auditoría");
+  hoja.columns = [
+    { header: "Fecha", key: "fecha", width: 22 },
+    { header: "Usuario", key: "usuario", width: 30 },
+    { header: "Rol", key: "rol", width: 16 },
+    { header: "Acción", key: "accion", width: 26 },
+    { header: "Detalle", key: "detalle", width: 40 },
+    { header: "IP", key: "ip", width: 18 },
+  ];
+  hoja.getRow(1).font = { bold: true };
+  for (const r of registros) {
+    hoja.addRow({
+      fecha: new Date(r.timestamp).toLocaleString("es-CL"),
+      usuario: r.userEmail,
+      rol: ROL_LABEL[r.role] ?? r.role,
+      accion: r.action,
+      detalle: r.detalle ?? "",
+      ip: r.ip ?? "",
+    });
+  }
+  const buffer = await libro.xlsx.writeBuffer();
+  const url = URL.createObjectURL(
+    new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+  );
+  const enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = `auditoria_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  enlace.click();
+  URL.revokeObjectURL(url);
 }
 
 const claseCampo =
@@ -48,21 +74,28 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
   }, [usuario, usuarios]);
   const mostrar = abierto && sugerencias.length > 0;
 
-  const filtrados = useMemo(() => {
-    const q = normalizar(usuario.trim());
-    const min = desde ? inicioDelDia(desde) : -Infinity;
-    // "hasta" incluye el día completo.
-    const max = hasta ? inicioDelDia(hasta) + 24 * 60 * 60 * 1000 : Infinity;
-    return registros.filter((r) => {
-      const t = new Date(r.timestamp).getTime();
-      return (
-        (!q || normalizar(r.userEmail).includes(q)) &&
-        (!rol || r.role === rol) &&
-        t >= min &&
-        t < max
-      );
-    });
-  }, [registros, usuario, rol, desde, hasta]);
+  // "hasta" incluye el día completo (límite exclusivo = inicio del día siguiente).
+  const filtro = useMemo(
+    () => ({
+      usuario: usuario.trim() || undefined,
+      rol: rol || undefined,
+      desdeMs: desde ? inicioDelDia(desde) : undefined,
+      hastaMs: hasta ? inicioDelDia(hasta) + DIA_MS : undefined,
+    }),
+    [usuario, rol, desde, hasta]
+  );
+  const filtrados = useMemo(() => filtrarAuditoria(registros, filtro), [registros, filtro]);
+
+  // El PDF lo arma el servidor con los mismos filtros (ver
+  // /api/reportes/auditoria-pdf).
+  const urlPdf = useMemo(() => {
+    const q = new URLSearchParams();
+    if (filtro.usuario) q.set("usuario", filtro.usuario);
+    if (filtro.rol) q.set("rol", filtro.rol);
+    if (filtro.desdeMs !== undefined) q.set("desdeMs", String(filtro.desdeMs));
+    if (filtro.hastaMs !== undefined) q.set("hastaMs", String(filtro.hastaMs));
+    return `/api/reportes/auditoria-pdf?${q.toString()}`;
+  }, [filtro]);
 
   const hayFiltros = Boolean(usuario || rol || desde || hasta);
 
@@ -192,27 +225,48 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
           </label>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted">
-          <span>
-            {filtrados.length === registros.length
-              ? `${registros.length} registros`
-              : `${filtrados.length} de ${registros.length} registros`}
-          </span>
-          {hayFiltros && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3 text-xs text-muted">
+            <span>
+              {filtrados.length === registros.length
+                ? `${registros.length} registros`
+                : `${filtrados.length} de ${registros.length} registros`}
+            </span>
+            {hayFiltros && (
+              <button
+                type="button"
+                onClick={() => {
+                  setUsuario("");
+                  setRol("");
+                  setDesde("");
+                  setHasta("");
+                }}
+                className="inline-flex items-center gap-1 text-accent hover:underline"
+              >
+                <FilterX className="h-3.5 w-3.5" />
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                setUsuario("");
-                setRol("");
-                setDesde("");
-                setHasta("");
-              }}
-              className="inline-flex items-center gap-1 text-accent hover:underline"
+              onClick={() => descargarExcel(filtrados)}
+              title={hayFiltros ? "Descargar en Excel los registros filtrados" : "Descargar en Excel todos los registros"}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs text-muted hover:bg-surface-alt hover:text-foreground"
             >
-              <FilterX className="h-3.5 w-3.5" />
-              Limpiar filtros
+              <Download className="h-3.5 w-3.5" />
+              Excel
             </button>
-          )}
+            <a
+              href={urlPdf}
+              title={hayFiltros ? "Exportar a PDF los registros filtrados" : "Exportar a PDF todos los registros"}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs text-muted hover:bg-surface-alt hover:text-foreground"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Exportar PDF
+            </a>
+          </div>
         </div>
       </div>
 

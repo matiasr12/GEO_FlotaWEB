@@ -66,6 +66,32 @@ async function listarAlertasMemoria(): Promise<Alert[]> {
   return alertas.sort(ordenAlertas);
 }
 
+// "DESKTOP-X · Matias Reinoso" para el detalle de auditoría de una alerta.
+// Nunca lanza: si no se encuentra, auditoría usa el número de alerta.
+export async function describirAlerta(alertaId: number): Promise<string> {
+  try {
+    if (!dbDisponible()) {
+      const a = (await listarAlertasMemoria()).find((x) => x.id === alertaId);
+      return a ? `${a.hostname} · ${a.custodioNombre}` : `Alerta ${alertaId}`;
+    }
+    const pool = await getPool();
+    const r = (
+      await pool.request().input("id", sql.Int, alertaId).query(`
+        SELECT e.ComputerName, e.CodigoActivo, p.Nombre, p.Apellido
+        FROM Alertas al
+        JOIN Equipos e ON e.Id = al.EquipoId
+        LEFT JOIN Personal p ON p.Id = e.PersonalId
+        WHERE al.Id = @id
+      `)
+    ).recordset[0];
+    if (!r) return `Alerta ${alertaId}`;
+    const nombre = [r.Nombre, r.Apellido].filter(Boolean).join(" ").trim();
+    return [r.ComputerName || r.CodigoActivo, nombre].filter(Boolean).join(" · ");
+  } catch {
+    return `Alerta ${alertaId}`;
+  }
+}
+
 // --- Caso real: dbo.Alertas / dbo.AccionesAlerta en Azure SQL.
 
 export async function listarAlertas(): Promise<Alert[]> {

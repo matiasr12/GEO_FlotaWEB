@@ -1,14 +1,11 @@
-import { obtenerSesion } from "@/lib/auth/session";
+import { connection } from "next/server";
 import { listarEquipos } from "@/lib/devices";
-import { registrarAuditoria } from "@/lib/audit";
 
 export default async function ReportsPage() {
-  const user = await obtenerSesion();
+  // Datos en vivo: sin esto Next prerenderiza la página en el build (con
+  // 0 equipos) porque ya no lee la sesión acá.
+  await connection();
   const devices = await listarEquipos();
-
-  if (user) {
-    await registrarAuditoria({ user, action: "ver_inventario", detalle: "reportes" });
-  }
 
   const normal = devices.filter((d) => d.estado === "normal").length;
   const alerta = devices.filter((d) => d.estado === "alerta").length;

@@ -1,6 +1,5 @@
 import { obtenerSesion } from "@/lib/auth/session";
 import { listarEquipos } from "@/lib/devices";
-import { registrarAuditoria } from "@/lib/audit";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { obtenerComentarios } from "@/lib/device-comments";
 import { listarAreas } from "@/lib/areas";
@@ -20,10 +19,6 @@ export default async function DevicesPage() {
     comentario: comentarios[d.id] ?? null,
     ...contactos.get(normalizarRut(d.custodioId)),
   }));
-
-  if (user) {
-    await registrarAuditoria({ user, action: "ver_inventario" });
-  }
 
   return (
     <DevicesClient

@@ -1,6 +1,5 @@
 import { obtenerSesion } from "@/lib/auth/session";
 import { listarEquipos } from "@/lib/daemon-api";
-import { registrarAuditoria } from "@/lib/audit";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { obtenerComentarios } from "@/lib/device-comments";
 import { listarAreas } from "@/lib/areas";
@@ -20,10 +19,6 @@ export default async function DashboardPage() {
     comentario: comentarios[d.id] ?? null,
     ...contactos.get(normalizarRut(d.custodioId)),
   }));
-
-  if (user) {
-    await registrarAuditoria({ user, action: "ver_dashboard" });
-  }
 
   const activos = devices.filter((d) => d.estado !== "sin_senal").length;
   const alertas = devices.filter((d) => d.estado === "alerta").length;

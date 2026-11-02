@@ -3,7 +3,7 @@
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
 import { CalendarDays, ChevronDown, Download, FileText, FilterX, User, X } from "lucide-react";
 import type { AuditLogEntry } from "@/types/audit";
-import { filtrarAuditoria, normalizar, ROL_LABEL } from "@/lib/filtro-auditoria";
+import { accionTexto, esVisita, filtrarAuditoria, normalizar, ROL_LABEL } from "@/lib/filtro-auditoria";
 
 const MAX_SUGERENCIAS = 8;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -27,7 +27,7 @@ async function descargarExcel(registros: AuditLogEntry[]) {
       fecha: new Date(r.timestamp).toLocaleString("es-CL"),
       usuario: r.userEmail,
       rol: ROL_LABEL[r.role] ?? r.role,
-      accion: r.action,
+      accion: accionTexto(r.action),
       detalle: r.detalle ?? "",
       ip: r.ip ?? "",
     });
@@ -57,6 +57,7 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
   const [rol, setRol] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
+  const [incluirVisitas, setIncluirVisitas] = useState(false);
   const [abierto, setAbierto] = useState(false);
   const [resaltado, setResaltado] = useState(0);
   const listaId = useId();
@@ -81,10 +82,16 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
       rol: rol || undefined,
       desdeMs: desde ? inicioDelDia(desde) : undefined,
       hastaMs: hasta ? inicioDelDia(hasta) + DIA_MS : undefined,
+      incluirVisitas,
     }),
-    [usuario, rol, desde, hasta]
+    [usuario, rol, desde, hasta, incluirVisitas]
   );
   const filtrados = useMemo(() => filtrarAuditoria(registros, filtro), [registros, filtro]);
+  // Total sin filtros, contando o no las visitas según la casilla.
+  const total = useMemo(
+    () => (incluirVisitas ? registros.length : registros.filter((r) => !esVisita(r.action)).length),
+    [registros, incluirVisitas]
+  );
 
   // El PDF lo arma el servidor con los mismos filtros (ver
   // /api/reportes/auditoria-pdf).
@@ -94,6 +101,7 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
     if (filtro.rol) q.set("rol", filtro.rol);
     if (filtro.desdeMs !== undefined) q.set("desdeMs", String(filtro.desdeMs));
     if (filtro.hastaMs !== undefined) q.set("hastaMs", String(filtro.hastaMs));
+    if (filtro.incluirVisitas) q.set("visitas", "1");
     return `/api/reportes/auditoria-pdf?${q.toString()}`;
   }, [filtro]);
 
@@ -228,10 +236,19 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3 text-xs text-muted">
             <span>
-              {filtrados.length === registros.length
-                ? `${registros.length} registros`
-                : `${filtrados.length} de ${registros.length} registros`}
+              {filtrados.length === total
+                ? `${total} registros`
+                : `${filtrados.length} de ${total} registros`}
             </span>
+            <label className="inline-flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={incluirVisitas}
+                onChange={(e) => setIncluirVisitas(e.target.checked)}
+                className="h-3.5 w-3.5 accent-[var(--accent)]"
+              />
+              Mostrar visitas a páginas (registros antiguos)
+            </label>
             {hayFiltros && (
               <button
                 type="button"
@@ -287,7 +304,7 @@ export function AuditoriaTabla({ registros }: { registros: AuditLogEntry[] }) {
                 <td className="px-5 py-3 text-muted">{new Date(r.timestamp).toLocaleString("es-CL")}</td>
                 <td className="px-5 py-3">{r.userEmail}</td>
                 <td className="px-5 py-3 text-muted">{ROL_LABEL[r.role] ?? r.role}</td>
-                <td className="px-5 py-3">{r.action}</td>
+                <td className="px-5 py-3" title={r.action}>{accionTexto(r.action)}</td>
                 <td className="px-5 py-3 text-muted">{r.detalle ?? "—"}</td>
               </tr>
             ))}

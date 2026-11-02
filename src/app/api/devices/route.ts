@@ -11,7 +11,6 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  await registrarAuditoria({ user, action: "ver_inventario" });
   return NextResponse.json(await listarEquipos());
 }
 

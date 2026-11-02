@@ -1,18 +1,15 @@
-import { obtenerSesion } from "@/lib/auth/session";
+import { connection } from "next/server";
 import { listarEquipos } from "@/lib/daemon-api";
-import { registrarAuditoria } from "@/lib/audit";
 import { MapViewClient } from "@/components/MapViewClient";
 
 export default async function MapPage({ searchParams }: PageProps<"/map">) {
-  const user = await obtenerSesion();
+  // Datos en vivo: sin esto Next prerenderiza la página en el build (con
+  // 0 equipos) porque ya no lee la sesión acá.
+  await connection();
   const devices = await listarEquipos();
   // /map?equipo=<id>: viene de tocar un equipo en la tabla de Equipos.
   const { equipo } = await searchParams;
   const enfocado = typeof equipo === "string" ? { id: equipo, vez: 1 } : undefined;
-
-  if (user) {
-    await registrarAuditoria({ user, action: "ver_mapa" });
-  }
 
   const conUbicacion = devices.filter((d) => d.ubicacion).length;
 

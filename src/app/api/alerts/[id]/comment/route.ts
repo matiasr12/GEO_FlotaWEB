@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
-import { comentarAlerta } from "@/lib/alerts";
+import { comentarAlerta, describirAlerta } from "@/lib/alerts";
+import { citar } from "@/lib/texto-auditoria";
 import { registrarAuditoria } from "@/lib/audit";
 
 const bodySchema = z.object({
@@ -43,6 +44,10 @@ export async function POST(
     return NextResponse.json({ error: "La alerta no existe" }, { status: 404 });
   }
 
-  await registrarAuditoria({ user, action: "comentar_alerta", detalle: id });
+  await registrarAuditoria({
+    user,
+    action: "comentar_alerta",
+    detalle: `${await describirAlerta(alertaId)} · ${citar(parsed.data.comentario)}`,
+  });
   return NextResponse.json({ ok: true });
 }

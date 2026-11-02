@@ -15,6 +15,7 @@ import {
   origenPublico,
 } from "@/lib/avisos-privacidad";
 import { registrarAuditoria } from "@/lib/audit";
+import { citar } from "@/lib/texto-auditoria";
 
 const bodySchema = z.object({
   mensaje: z.string().trim().max(2000).optional(),
@@ -55,7 +56,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         `Se avisó a ${solicitud.solicitanteEmail} que su solicitud está ${ESTADO_LABEL[solicitud.estado]}` +
         (mensaje ? `: "${mensaje}"` : "."),
     });
-    await registrarAuditoria({ user, action: "avisar_titular", detalle: `${id} · ${solicitud.estado}` });
+    await registrarAuditoria({
+      user,
+      action: "avisar_titular",
+      detalle: [
+        `${solicitud.solicitanteNombre} <${solicitud.solicitanteEmail}>`,
+        `estado: ${ESTADO_LABEL[solicitud.estado]}`,
+        citar(mensaje),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    });
   }
 
   return NextResponse.json({ ...aviso, notas: await listarNotas(id) });

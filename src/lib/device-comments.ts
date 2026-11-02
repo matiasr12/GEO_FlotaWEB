@@ -20,6 +20,25 @@ export async function obtenerComentarios(): Promise<Record<string, string>> {
   );
 }
 
+// Hostname del equipo para el detalle de auditoría. Nunca lanza: si no se
+// encuentra, auditoría usa el id.
+export async function describirEquipo(equipoId: string): Promise<string> {
+  const id = Number(equipoId);
+  if (!dbDisponible() || !Number.isInteger(id)) return `Equipo ${equipoId}`;
+  try {
+    const pool = await getPool();
+    const r = (
+      await pool
+        .request()
+        .input("id", sql.Int, id)
+        .query("SELECT ComputerName, CodigoActivo FROM Equipos WHERE Id = @id")
+    ).recordset[0];
+    return r?.ComputerName || r?.CodigoActivo || `Equipo ${equipoId}`;
+  } catch {
+    return `Equipo ${equipoId}`;
+  }
+}
+
 export async function guardarComentario(equipoId: string, comentario: string): Promise<void> {
   if (!dbDisponible()) {
     if (comentario) memoria.set(equipoId, comentario);

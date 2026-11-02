@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
-import { guardarComentario } from "@/lib/device-comments";
+import { describirEquipo, guardarComentario } from "@/lib/device-comments";
+import { citar } from "@/lib/texto-auditoria";
 import { registrarAuditoria } from "@/lib/audit";
 
 const inputSchema = z.object({
@@ -24,8 +25,13 @@ export async function PUT(
   }
 
   const { id } = await params;
-  await guardarComentario(id, parsed.data.comentario.trim());
-  await registrarAuditoria({ user, action: "comentar_equipo", detalle: id });
+  const comentario = parsed.data.comentario.trim();
+  await guardarComentario(id, comentario);
+  await registrarAuditoria({
+    user,
+    action: "comentar_equipo",
+    detalle: `${await describirEquipo(id)} · ${comentario ? citar(comentario) : "borró el comentario"}`,
+  });
 
   return NextResponse.json({ ok: true });
 }

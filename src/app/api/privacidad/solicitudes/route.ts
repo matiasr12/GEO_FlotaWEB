@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   await registrarAuditoria({
     user,
     action: "solicitud_titular_datos",
-    detalle: `${solicitud.tipoSolicitud} · ${solicitud.solicitanteEmail}`,
+    detalle: `${solicitud.solicitanteNombre} <${solicitud.solicitanteEmail}> · ${solicitud.tipoSolicitud}`,
   });
 
   // Aviso al titular. Si falla, la solicitud ya quedó registrada: se

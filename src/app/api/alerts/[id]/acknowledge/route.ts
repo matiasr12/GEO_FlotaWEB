@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
-import { reconocerAlerta } from "@/lib/alerts";
+import { describirAlerta, reconocerAlerta } from "@/lib/alerts";
+import { citar } from "@/lib/texto-auditoria";
 import { registrarAuditoria } from "@/lib/audit";
 
 const bodySchema = z.object({
@@ -46,6 +47,11 @@ export async function POST(
     );
   }
 
-  await registrarAuditoria({ user, action: "reconocer_alerta", detalle: id });
+  const comentario = parsed.data.comentario?.trim();
+  await registrarAuditoria({
+    user,
+    action: "reconocer_alerta",
+    detalle: `${await describirAlerta(alertaId)} · ${comentario ? citar(comentario) : "sin comentario"}`,
+  });
   return NextResponse.json({ ok: true });
 }

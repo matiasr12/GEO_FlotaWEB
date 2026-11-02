@@ -13,6 +13,9 @@ const AZUL = "#1e40af";
 const TEXTO = "#0f172a";
 const GRIS = "#64748b";
 const BORDE = "#cbd5e1";
+// Alto de una línea de 9 pt: con width + height pdfkit corta el texto largo
+// con "…" en vez de pasarlo a una segunda línea encima de la fila de abajo.
+const ALTO_TEXTO = 11;
 
 export function fechaHora(fecha: Date | string, conSegundos = false) {
   return new Date(fecha).toLocaleString("es-CL", {
@@ -116,7 +119,7 @@ export async function generarPdfTabla<T>(p: {
     let x = izq;
     doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(9);
     for (const c of p.columnas) {
-      doc.text(c.titulo, x + 6, y + 6, { width: c.ancho - 12, lineBreak: false, ellipsis: true });
+      doc.text(c.titulo, x + 6, y + 6, { width: c.ancho - 12, height: ALTO_TEXTO, ellipsis: true });
       x += c.ancho;
     }
     doc.y = y + altoFila;
@@ -145,7 +148,7 @@ export async function generarPdfTabla<T>(p: {
         .fillColor(c.color?.(fila) ?? TEXTO)
         .font(c.negrita ? "Helvetica-Bold" : "Helvetica")
         .fontSize(9)
-        .text(c.valor(fila), x + 6, y + 6, { width: c.ancho - 12, lineBreak: false, ellipsis: true });
+        .text(c.valor(fila), x + 6, y + 6, { width: c.ancho - 12, height: ALTO_TEXTO, ellipsis: true });
       x += c.ancho;
     }
     doc

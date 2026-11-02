@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { obtenerSesion } from "@/lib/auth/session";
 import { tienePermiso } from "@/lib/auth/rbac";
 import { listarAuditoria, registrarAuditoria } from "@/lib/audit";
-import { filtrarAuditoria, ROL_LABEL } from "@/lib/filtro-auditoria";
+import { accionTexto, filtrarAuditoria, ROL_LABEL } from "@/lib/filtro-auditoria";
 import { fechaHora, generarPdfTabla } from "@/lib/pdf-tabla";
 import type { AuditLogEntry } from "@/types/audit";
 
@@ -24,8 +24,9 @@ export async function GET(req: Request) {
   const rol = q.get("rol")?.trim() || undefined;
   const desdeMs = numero(q.get("desdeMs"));
   const hastaMs = numero(q.get("hastaMs"));
+  const incluirVisitas = q.get("visitas") === "1";
 
-  const registros = filtrarAuditoria(await listarAuditoria(), { usuario, rol, desdeMs, hastaMs });
+  const registros = filtrarAuditoria(await listarAuditoria(), { usuario, rol, desdeMs, hastaMs, incluirVisitas });
 
   const filtros = [
     usuario && `Usuario: "${usuario}"`,
@@ -48,12 +49,12 @@ export async function GET(req: Request) {
       { etiqueta: "Usuarios distintos", valor: new Set(registros.map((r) => r.userEmail)).size, color: "#0f766e" },
     ],
     columnas: [
-      { titulo: "Fecha", ancho: 130, valor: (r) => fechaHora(r.timestamp, true) },
-      { titulo: "Usuario", ancho: 170, valor: (r) => r.userEmail, negrita: true },
-      { titulo: "Rol", ancho: 90, valor: (r) => ROL_LABEL[r.role] ?? r.role },
-      { titulo: "Acción", ancho: 150, valor: (r) => r.action },
-      { titulo: "Detalle", ancho: 140, valor: (r) => r.detalle ?? "—" },
-      { titulo: "IP", ancho: 90, valor: (r) => r.ip ?? "—" },
+      { titulo: "Fecha", ancho: 120, valor: (r) => fechaHora(r.timestamp, true) },
+      { titulo: "Usuario", ancho: 150, valor: (r) => r.userEmail, negrita: true },
+      { titulo: "Rol", ancho: 80, valor: (r) => ROL_LABEL[r.role] ?? r.role },
+      { titulo: "Acción", ancho: 145, valor: (r) => accionTexto(r.action) },
+      { titulo: "Detalle", ancho: 215, valor: (r) => r.detalle ?? "—" },
+      { titulo: "IP", ancho: 60, valor: (r) => r.ip ?? "—" },
     ],
     filas: registros,
     textoVacio: "Ningún registro coincide con los filtros.",

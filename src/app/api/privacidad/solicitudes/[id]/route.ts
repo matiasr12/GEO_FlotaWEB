@@ -11,6 +11,16 @@ import {
   obtenerSolicitud,
 } from "@/lib/data-subject-requests";
 import { registrarAuditoria } from "@/lib/audit";
+import { citar } from "@/lib/texto-auditoria";
+import type { EstadoSolicitud } from "@/lib/data-subject-requests";
+
+// Mismos nombres que muestra el panel (SolicitudDetalleModal).
+const ESTADO_NOMBRE: Record<EstadoSolicitud, string> = {
+  pendiente: "Pendiente",
+  en_proceso: "En proceso",
+  resuelta: "Resuelta",
+  rechazada: "Rechazada",
+};
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -31,7 +41,6 @@ export async function GET(_req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "La solicitud no existe" }, { status: 404 });
   }
 
-  await registrarAuditoria({ user, action: "ver_solicitud_titular", detalle: id });
   return NextResponse.json({ solicitud, notas: await listarNotas(id) });
 }
 
@@ -65,17 +74,26 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
 
   const { estado, comentario } = parsed.data;
+  const titular = `${solicitud.solicitanteNombre} (${solicitud.tipoSolicitud})`;
   if (estado && estado !== solicitud.estado) {
+    const anterior = solicitud.estado;
     // El comentario, si hay, queda en la misma fila del cambio de estado.
     solicitud = await cambiarEstado(solicitud, estado as typeof solicitud.estado, user, comentario || undefined);
     await registrarAuditoria({
       user,
       action: "estado_solicitud_titular",
-      detalle: `${id} · ${estado}`,
+      // Sin "→": Helvetica del PDF de auditoría no tiene ese carácter.
+      detalle: [titular, `de ${ESTADO_NOMBRE[anterior]} a ${ESTADO_NOMBRE[solicitud.estado]}`, citar(comentario)]
+        .filter(Boolean)
+        .join(" · "),
     });
   } else if (comentario) {
     await agregarNota(id, user, { tipo: "comentario", comentario });
-    await registrarAuditoria({ user, action: "comentar_solicitud_titular", detalle: id });
+    await registrarAuditoria({
+      user,
+      action: "comentar_solicitud_titular",
+      detalle: `${titular} · ${citar(comentario)}`,
+    });
   }
 
   return NextResponse.json({ solicitud, notas: await listarNotas(id) });

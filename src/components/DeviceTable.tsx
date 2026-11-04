@@ -175,8 +175,18 @@ function CampoSelect({
   );
 }
 
+// Área asignada al equipo: la que usan el filtro y la lista de áreas.
+function areaAsignada(d: Device) {
+  return d.area ?? d.faena ?? "—";
+}
+
+// Lo que se muestra: el área asignada y, si el PC está detectado en otra,
+// dónde está. Ej.: "E 165 (en CIO)".
 function areaTexto(d: Device) {
-  return d.areaDetectada ?? d.area ?? d.faena ?? "—";
+  const asignada = areaAsignada(d);
+  return d.areaDetectada && d.areaDetectada !== d.area
+    ? `${asignada} (en ${d.areaDetectada})`
+    : asignada;
 }
 
 // "Fuera de turno" + "Dormitorios" → "fuera-de-turno_dormitorios", para que
@@ -322,7 +332,7 @@ export function DeviceTable({
   // Todas las áreas registradas (dbo.Areas) más las que traen los equipos,
   // por si alguna solo viene del backend.
   const areasDisponibles = useMemo(() => {
-    const set = new Set([...areas, ...devices.map((d) => areaTexto(d)).filter((a) => a !== "—")]);
+    const set = new Set([...areas, ...devices.map((d) => areaAsignada(d)).filter((a) => a !== "—")]);
     return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
   }, [areas, devices]);
 
@@ -355,7 +365,7 @@ export function DeviceTable({
       (d) =>
         (!h || normalizar(d.hostname).includes(h)) &&
         (!c || normalizar(d.custodioNombre).includes(c)) &&
-        (!filtroArea || areaTexto(d) === filtroArea) &&
+        (!filtroArea || areaAsignada(d) === filtroArea) &&
         (!filtroEstado || d.estado === filtroEstado)
     );
   }, [devices, filtroHostname, filtroCustodio, filtroArea, filtroEstado]);

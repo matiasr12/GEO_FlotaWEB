@@ -20,8 +20,18 @@ const ESTADO_COLOR: Record<DeviceStatus, string> = {
   fuera_de_turno: "#64748b",
 };
 
+// Área asignada al equipo: la que usa el filtro del reporte.
+export function areaAsignada(d: Device) {
+  return d.area ?? d.faena ?? "—";
+}
+
+// Lo que se muestra (igual que la tabla): el área asignada y, si el PC está
+// detectado en otra, dónde está. Ej.: "E 165 (en CIO)".
 export function areaTexto(d: Device) {
-  return d.areaDetectada ?? d.area ?? d.faena ?? "—";
+  const asignada = areaAsignada(d);
+  return d.areaDetectada && d.areaDetectada !== d.area
+    ? `${asignada} (en ${d.areaDetectada})`
+    : asignada;
 }
 
 const COLUMNAS: ColumnaPdf<Device>[] = [

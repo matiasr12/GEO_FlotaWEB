@@ -128,6 +128,10 @@ export function MapView({
               attribution='Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
               url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               maxZoom={19}
+              // En la faena Esri no tiene fotos sobre el nivel 17 ("Map data
+              // not yet available", cuadros grises): desde ahí Leaflet agranda
+              // las fotos del 17 en vez de pedir las que no existen.
+              maxNativeZoom={17}
             />
           </LayersControl.BaseLayer>
           <LayersControl.BaseLayer name="Calles">

@@ -5,7 +5,7 @@ import { tienePermiso } from "@/lib/auth/rbac";
 import { listarEquipos } from "@/lib/devices";
 import { registrarAuditoria } from "@/lib/audit";
 import {
-  areaTexto,
+  areaAsignada,
   ESTADO_LABEL,
   generarReporteEquiposPdf,
 } from "@/lib/reporte-equipos-pdf";
@@ -39,7 +39,7 @@ async function generar(req: Request) {
       (d) =>
         (!h || normalizar(d.hostname).includes(h)) &&
         (!t || normalizar(d.custodioNombre).includes(t)) &&
-        (!area || areaTexto(d) === area) &&
+        (!area || areaAsignada(d) === area) &&
         (!estado || d.estado === estado)
     )
     .sort((a, b) => a.hostname.localeCompare(b.hostname, "es"));
